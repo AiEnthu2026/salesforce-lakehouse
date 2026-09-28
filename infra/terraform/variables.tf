@@ -28,11 +28,13 @@ variable "environment" {
 variable "shared_storage_account_resource_group_name" {
   description = "Resource group name for the storage account shared"
   type        = string
+  sensitive   = true
 }
 
 variable "shared_storage_account_name" {
   description = "Shared storage account name"
   type        = string
+  sensitive   = true
 }
 
 variable "allowed_ip_ranges" {

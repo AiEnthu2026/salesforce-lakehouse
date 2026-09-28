@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    databricks = {
+      source  = "databricks/databricks"
+      version = "~> 1.0"   # check registry for current version before typing
+    }
   }
 
   backend "azurerm" {
