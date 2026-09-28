@@ -41,4 +41,14 @@ terraform.rc
 
 # Optional: ignore plan files saved before destroying Terraform configuration
 # Uncomment the line below if you want to ignore planout files.
-# planout
+# planout 
+# Python 
+__pycache__/ 
+*.pyc 
+.venv/ 
+.pytest_cache/ 
+# Project 
+variable-overrides.json 
+.env 
+.databricks/ 
+backend.hcl
