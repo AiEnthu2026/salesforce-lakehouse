@@ -1,0 +1,10 @@
+{
+	"name": "ls_kv_salesforce",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-salesforce-dev-abcd.vault.azure.net/"
+		}
+	}
+}
