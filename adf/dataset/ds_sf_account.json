@@ -1,0 +1,23 @@
+{
+	"name": "ds_sf_account",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_salesforce_dev",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"object": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SalesforceV2Object",
+		"schema": [],
+		"typeProperties": {
+			"objectApiName": {
+				"value": "@dataset().object",
+				"type": "Expression"
+			}
+		}
+	}
+}
