@@ -61,7 +61,8 @@
 				]
 			},
 			{
-				"name": "Copy data1",
+				"name": "Copy Contact",
+				"description": "Copy Contact data from Salesforce",
 				"type": "Copy",
 				"dependsOn": [
 					{
@@ -120,6 +121,71 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"folder": "landing/salesforce/contact/2026-09-29"
+						}
+					}
+				]
+			},
+			{
+				"name": "Copy Case",
+				"description": "Copy Case from Salesforce",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Copy Contact",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SalesforceV2Source",
+						"includeDeletedObjects": false,
+						"partitionOption": "AutoDetect",
+						"preserveScaleFromSchema": false
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_sf_account",
+						"type": "DatasetReference",
+						"parameters": {
+							"object": "Case"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_landing_parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folder": "landing/salesforce/case/2026-09-29"
 						}
 					}
 				]
