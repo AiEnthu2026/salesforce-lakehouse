@@ -8,13 +8,13 @@ resource "azurerm_resource_group" "main" {
 }
 
 data "azurerm_storage_account" "shared" {
-  name                = "${var.shared_storage_account_name}"
-  resource_group_name = "${var.shared_storage_account_resource_group_name}"
+  name                = var.shared_storage_account_name
+  resource_group_name = var.shared_storage_account_resource_group_name
 }
 
 resource "azurerm_storage_container" "salesforce" {
   name                  = "salesforce"
-  storage_account_id   = data.azurerm_storage_account.shared.id
+  storage_account_id    = data.azurerm_storage_account.shared.id
   container_access_type = "private"
 }
 

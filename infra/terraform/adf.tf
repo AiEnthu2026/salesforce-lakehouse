@@ -5,7 +5,7 @@ resource "random_string" "adf_suffix" {
 }
 
 resource "azurerm_data_factory" "salesforce" {
-  name = "adf-salesforce-${var.environment}-${random_string.adf_suffix.result}"
+  name                = "adf-salesforce-${var.environment}-${random_string.adf_suffix.result}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
 

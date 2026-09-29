@@ -61,3 +61,10 @@ resource "databricks_catalog" "salesforce" {
   storage_root = databricks_external_location.salesforce_managed.url
   comment      = "Salesforce lakehouse: bronze/silver/gold"
 }
+
+resource "databricks_external_location" "salesforce_landing" {
+  name            = "extloc-salesforce-landing-${var.environment}"
+  url             = "abfss://${azurerm_storage_container.salesforce.name}@${data.azurerm_storage_account.shared.name}.dfs.core.windows.net/landing"
+  credential_name = databricks_storage_credential.salesforce.name
+  comment         = "Landing zone written by ADF, read by Bronze"
+}

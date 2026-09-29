@@ -12,19 +12,20 @@ terraform {
     }
     databricks = {
       source  = "databricks/databricks"
-      version = "~> 1.0"   # check registry for current version before typing
+      version = "~> 1.0" # check registry for current version before typing
     }
   }
 
   backend "azurerm" {
-    key                   = "salesforce-dev.tfstate"
-    use_azuread_auth      = true
+    key              = "salesforce-dev.tfstate"
+    use_azuread_auth = true
   }
 }
 
 provider "azurerm" {
   features {}
-  subscription_id = var.subscription_id
+  subscription_id     = var.subscription_id
+  storage_use_azuread = true
 
   resource_providers_to_register = [
     "Microsoft.DataFactory",
