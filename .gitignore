@@ -52,3 +52,5 @@ variable-overrides.json
 .env 
 .databricks/ 
 backend.hcl
+data/
+.venv/
