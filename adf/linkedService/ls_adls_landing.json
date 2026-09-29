@@ -1,0 +1,11 @@
+{
+	"name": "ls_adls_landing",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://sttfnswdevuxpm44.dfs.core.windows.net/"
+		}
+	}
+}
