@@ -64,14 +64,7 @@
 				"name": "Copy Contact",
 				"description": "Copy Contact data from Salesforce",
 				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "Copy Account",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -129,14 +122,7 @@
 				"name": "Copy Case",
 				"description": "Copy Case from Salesforce",
 				"type": "Copy",
-				"dependsOn": [
-					{
-						"activity": "Copy Contact",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
+				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
