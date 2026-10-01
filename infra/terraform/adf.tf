@@ -4,6 +4,12 @@ resource "random_string" "adf_suffix" {
   special = false
 }
 
+variable "git_account_name" {
+  description = "Git Account Name"
+  type        = string
+  sensitive   = false
+}
+
 resource "azurerm_data_factory" "salesforce" {
   name                = "adf-salesforce-${var.environment}-${random_string.adf_suffix.result}"
   location            = azurerm_resource_group.main.location
@@ -11,6 +17,15 @@ resource "azurerm_data_factory" "salesforce" {
 
   identity {
     type = "SystemAssigned"
+  }
+
+  github_configuration {
+    account_name    = "${var.git_account_name}"
+    repository_name = "salesforce-lakehouse"
+    branch_name     = "develop"
+    root_folder     = "/adf"
+    publishing_enabled = true
+    git_url         = "https://github.com"
   }
 }
 
