@@ -47,8 +47,6 @@ resource "azurerm_storage_container" "src_blob_usage" {
   container_access_type = "private"
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_role_assignment" "me_source_writer" {
   scope                = azurerm_storage_container.src_blob_usage.id
   role_definition_name = "Storage Blob Data Contributor"
