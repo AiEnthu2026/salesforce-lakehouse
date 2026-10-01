@@ -68,3 +68,13 @@ resource "databricks_external_location" "salesforce_landing" {
   credential_name = databricks_storage_credential.salesforce.name
   comment         = "Landing zone written by ADF, read by Bronze"
 }
+
+resource "databricks_catalog" "salesforce_staging" {
+  name         = "${var.project_name}_staging"
+  storage_root = "${databricks_external_location.salesforce_managed.url}/staging"
+  comment      = "Salesforce lakehouse: staging"
+
+  properties = {
+    collation = "UTF8_BINARY"
+  }
+}
