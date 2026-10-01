@@ -42,7 +42,10 @@ def fact_case():
         F.col("type").alias("case_type"),
         "reason",
         "is_closed",
-        "is_escalated",
+        (
+            F.coalesce(F.col("is_escalated"), F.lit(False))
+            | F.coalesce(F.col("status") == "Escalated", F.lit(False))
+        ).alias("is_escalated"),
         F.date_format(created, "yyyyMMdd").cast("int").alias("created_date_key"),
         F.date_format(closed, "yyyyMMdd").cast("int").alias("closed_date_key"),
         created.alias("created_at"),
