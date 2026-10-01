@@ -12,6 +12,10 @@ variables:
     default: false
   landing_base:
     description: abfss URL of the landing root, no trailing slash
+  warehouse_id:
+    description: SQL warehouse that runs the dashboard queries
+    lookup:
+      warehouse: "Serverless Starter Warehouse"
 
 targets:
   dev:
