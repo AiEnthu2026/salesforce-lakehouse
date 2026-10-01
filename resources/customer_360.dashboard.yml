@@ -1,0 +1,9 @@
+resources:
+  dashboards:
+    customer_360:
+      display_name: "Customer 360 Overview"
+      warehouse_id: ${var.warehouse_id}
+      file_path: ../src/customer_360.lvdash.json
+      dataset_catalog: ${var.catalog_name}
+      dataset_schema: gold
+      embed_credentials: true

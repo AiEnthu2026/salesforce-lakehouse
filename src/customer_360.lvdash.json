@@ -1,0 +1,605 @@
+{
+  "bookmarks": [
+    {
+      "displayName": "Unnamed bookmark",
+      "name": "d6a9c4a0"
+    }
+  ],
+  "datasets": [
+    {
+      "catalog": "salesforce_dev",
+      "displayName": "kpis",
+      "name": "f5f8c2e2",
+      "queryLines": [
+        "SELECT\r\n",
+        "  SUM(usage_amount_aud)  AS usage_revenue_aud,\r\n",
+        "  SUM(cases_opened)      AS cases_opened,\r\n",
+        "  SUM(cases_escalated)   AS cases_escalated,\r\n",
+        "  COUNT(DISTINCT account_id) AS accounts\r\n",
+        "FROM salesforce_dev.gold.agg_account_monthly\r\n",
+        "WHERE account_id <> 'UNKNOWN'"
+      ],
+      "schema": "bronze"
+    },
+    {
+      "displayName": "Usage by Month",
+      "name": "21634b30",
+      "queryLines": [
+        "SELECT d.month_start, u.service, SUM(u.amount_aud) AS amount_aud\r\n",
+        "FROM salesforce_dev.gold.fact_usage u\r\n",
+        "JOIN salesforce_dev.gold.dim_date d ON u.date_key = d.date_key\r\n",
+        "WHERE NOT u.is_orphan_account\r\n",
+        "GROUP BY d.month_start, u.service"
+      ]
+    },
+    {
+      "displayName": "Data Quality",
+      "name": "3984297b",
+      "queryLines": [
+        "   SELECT\r\n",
+        "     SUM(CASE WHEN is_orphan_account THEN 1 ELSE 0 END) AS orphan_cases,\r\n",
+        "     COUNT(*)                                            AS total_cases\r\n",
+        "   FROM salesforce_dev.gold.fact_case"
+      ]
+    },
+    {
+      "displayName": "Usage by Industry",
+      "name": "f895fcaa",
+      "queryLines": [
+        "SELECT industry,\r\n",
+        "       SUM(usage_amount_aud) AS usage_amount_aud,\r\n",
+        "       SUM(cases_opened)     AS cases_opened\r\n",
+        "FROM salesforce_dev.gold.agg_account_monthly\r\n",
+        "WHERE account_id <> 'UNKNOWN'\r\n",
+        "GROUP BY industry"
+      ]
+    },
+    {
+      "displayName": "Case Mix",
+      "name": "7943f4e8",
+      "queryLines": [
+        "SELECT status, priority, COUNT(*) AS cases\r\n",
+        "FROM salesforce_dev.gold.fact_case\r\n",
+        "WHERE NOT is_orphan_account\r\n",
+        "GROUP BY status, priority"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "displayName": "Overview",
+      "layout": [
+        {
+          "position": {
+            "height": 3,
+            "width": 2,
+            "x": 0,
+            "y": 0
+          },
+          "widget": {
+            "name": "usage-revenue-aud",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f5f8c2e2",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`usage_revenue_aud`)",
+                      "name": "sum(usage_revenue_aud)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(usage_revenue_aud)"
+                }
+              },
+              "frame": {
+                "showDescription": false,
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size: 18px;\">REVENUE (AUD)</span></span>"
+                }
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 3,
+            "width": 2,
+            "x": 2,
+            "y": 0
+          },
+          "widget": {
+            "name": "cases-opened",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f5f8c2e2",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`cases_opened`)",
+                      "name": "sum(cases_opened)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(cases_opened)"
+                }
+              },
+              "frame": {
+                "showDescription": false,
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size: 18px;\">CASES OPENED</span></span>"
+                }
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 3,
+            "width": 2,
+            "x": 4,
+            "y": 0
+          },
+          "widget": {
+            "name": "cases-escalated",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f5f8c2e2",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`cases_escalated`)",
+                      "name": "sum(cases_escalated)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(cases_escalated)"
+                }
+              },
+              "frame": {
+                "showDescription": false,
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size: 18px;\">CASES ESCALATED</span></span>"
+                }
+              },
+              "version": 2,
+              "widgetType": "counter"
+            },
+            "specExtensions": {
+              "widgetBackgroundColor": {
+                "light": "#FFFFFF"
+              }
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 3,
+            "width": 2,
+            "x": 6,
+            "y": 0
+          },
+          "widget": {
+            "name": "e42f3a56",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f5f8c2e2",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`accounts`)",
+                      "name": "sum(accounts)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(accounts)"
+                }
+              },
+              "frame": {
+                "showDescription": false,
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size: 18px;\">ACCOUNTS</span></span>"
+                }
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 3,
+            "width": 3,
+            "x": 8,
+            "y": 0
+          },
+          "widget": {
+            "name": "5d9492d2",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3984297b",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`orphan_cases`)",
+                      "name": "sum(orphan_cases)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(orphan_cases)"
+                }
+              },
+              "frame": {
+                "showDescription": false,
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size:18px\">UNVALIDATED-ACCOUNT CASES</span></span>"
+                }
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 12,
+            "x": 0,
+            "y": 3
+          },
+          "widget": {
+            "name": "monthly-usage",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "21634b30",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "`service`",
+                      "name": "service"
+                    },
+                    {
+                      "expression": "DATE_TRUNC(\"MONTH\", `month_start`)",
+                      "name": "monthly(month_start)"
+                    },
+                    {
+                      "expression": "SUM(`amount_aud`)",
+                      "name": "sum(amount_aud)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "color": {
+                  "fieldName": "service",
+                  "scale": {
+                    "mappings": [
+                      {
+                        "color": {
+                          "position": 8,
+                          "themeColorType": "visualizationColors"
+                        },
+                        "value": "support"
+                      }
+                    ],
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                },
+                "x": {
+                  "displayName": "Month",
+                  "fieldName": "monthly(month_start)",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "displayName": "Amount ( AUD )",
+                  "fieldName": "sum(amount_aud)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size: 18px;\">USAGE REVENUE BY MONTH AND SERVICE</span></span>"
+                }
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 6,
+            "x": 0,
+            "y": 9
+          },
+          "widget": {
+            "name": "cases-by-priority",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "7943f4e8",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "`status`",
+                      "name": "status"
+                    },
+                    {
+                      "expression": "SUM(`cases`)",
+                      "name": "sum(cases)"
+                    },
+                    {
+                      "expression": "`priority`",
+                      "name": "priority"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "color": {
+                  "fieldName": "status",
+                  "scale": {
+                    "mappings": [
+                      {
+                        "color": {
+                          "position": 3,
+                          "themeColorType": "visualizationColors"
+                        },
+                        "value": "Closed"
+                      },
+                      {
+                        "color": {
+                          "position": 4,
+                          "themeColorType": "visualizationColors"
+                        },
+                        "value": "Escalated"
+                      },
+                      {
+                        "color": {
+                          "position": 5,
+                          "themeColorType": "visualizationColors"
+                        },
+                        "value": "New"
+                      },
+                      {
+                        "color": {
+                          "position": 2,
+                          "themeColorType": "visualizationColors"
+                        },
+                        "value": "Working"
+                      }
+                    ],
+                    "type": "categorical"
+                  }
+                },
+                "x": {
+                  "axis": {
+                    "title": "Total Cases"
+                  },
+                  "fieldName": "sum(cases)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Priority"
+                  },
+                  "fieldName": "priority",
+                  "scale": {
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "High",
+                        "Medium",
+                        "Low"
+                      ]
+                    },
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size: 18px;\">CASES BY PRIORITY</span></span>"
+                }
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 6,
+            "x": 6,
+            "y": 9
+          },
+          "widget": {
+            "name": "usage-by-industry",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f895fcaa",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`usage_amount_aud`)",
+                      "name": "sum(usage_amount_aud)"
+                    },
+                    {
+                      "expression": "`industry`",
+                      "name": "industry"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "x": {
+                  "displayName": "Amount ( AUD )",
+                  "fieldName": "sum(usage_amount_aud)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "axis": {
+                    "title": "Industry"
+                  },
+                  "fieldName": "industry",
+                  "scale": {
+                    "sort": {
+                      "by": "x-reversed"
+                    },
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size: 18px;\">USAGE BY INDUSTRY</span></span>"
+                }
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          }
+        }
+      ],
+      "layoutVersion": "GRID_V1",
+      "name": "f0c37b9f",
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "position": {
+            "height": 2,
+            "width": 1,
+            "x": 0,
+            "y": 0
+          },
+          "widget": {
+            "name": "0d771c9e",
+            "spec": {
+              "encodings": {},
+              "frame": {
+                "showTitle": true
+              },
+              "version": 2,
+              "widgetType": "filter-single-select"
+            }
+          }
+        }
+      ],
+      "layoutVersion": "GRID_V1",
+      "name": "7886411b",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS"
+    }
+  ],
+  "uiSettings": {
+    "applyModeEnabled": false,
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    }
+  }
+}
