@@ -52,3 +52,33 @@ def test_fact_case_orphans_and_hours():
     assert rows["c2"].source_account_id == "GONE"
     assert rows["c2"].is_orphan_account is True
     assert rows["c2"].hours_to_close is None
+    
+def test_fact_case_escalation_from_flag_or_status():
+    def case(case_id, status, is_escalated):
+        return (case_id, "001", "A1", None, status, "High", "Web", None, None,
+                False, is_escalated, datetime(2026, 1, 1, 0, 0), None)
+
+    cases = spark.createDataFrame(
+        [
+            case("flag_only", "Working", True),
+            case("status_only", "Escalated", False),
+            case("null_flag_escalated_status", "Escalated", None),
+            case("neither", "Working", False),
+            case("null_flag_other_status", "Working", None),
+            case("null_status", None, False),
+        ],
+        "id string, case_number string, account_id string, contact_id string, "
+        "status string, priority string, origin string, type string, reason string, "
+        "is_closed boolean, is_escalated boolean, created_at timestamp, closed_at timestamp",
+    )
+    accounts = spark.createDataFrame([("A1",)], "dim_account_id string")
+    rows = {r.case_id: r.is_escalated for r in build_fact_case(cases, accounts).collect()}
+
+    assert rows == {
+        "flag_only": True,
+        "status_only": True,
+        "null_flag_escalated_status": True,
+        "neither": False,
+        "null_flag_other_status": False,
+        "null_status": False,
+    }
