@@ -1,0 +1,25 @@
+bundle:
+  name: salesforce-lakehouse
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog_name:
+    description: Unity Catalog catalog for this environment
+  pipeline_dev_mode:
+    description: LDP development mode, true for dev only
+    default: false
+  landing_base:
+    description: abfss URL of the landing root, no trailing slash
+
+targets:
+  dev:
+    default: true
+    # The workspace host is hardcoded on purpose, so a misconfigured CI variable
+    # cannot redirect a deploy.
+    workspace:
+      host: https://adb-7405611900530243.3.azuredatabricks.net/
+    variables:
+      catalog_name: salesforce_dev
+      pipeline_dev_mode: true
