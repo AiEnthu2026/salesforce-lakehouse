@@ -7,7 +7,6 @@
   ],
   "datasets": [
     {
-      "catalog": "salesforce_dev",
       "displayName": "kpis",
       "name": "f5f8c2e2",
       "queryLines": [
@@ -16,18 +15,17 @@
         "  SUM(cases_opened)      AS cases_opened,\r\n",
         "  SUM(cases_escalated)   AS cases_escalated,\r\n",
         "  COUNT(DISTINCT account_id) AS accounts\r\n",
-        "FROM salesforce_dev.gold.agg_account_monthly\r\n",
+        "FROM gold.agg_account_monthly\r\n",
         "WHERE account_id <> 'UNKNOWN'"
-      ],
-      "schema": "bronze"
+      ]
     },
     {
       "displayName": "Usage by Month",
       "name": "21634b30",
       "queryLines": [
         "SELECT d.month_start, u.service, SUM(u.amount_aud) AS amount_aud\r\n",
-        "FROM salesforce_dev.gold.fact_usage u\r\n",
-        "JOIN salesforce_dev.gold.dim_date d ON u.date_key = d.date_key\r\n",
+        "FROM gold.fact_usage u\r\n",
+        "JOIN gold.dim_date d ON u.date_key = d.date_key\r\n",
         "WHERE NOT u.is_orphan_account\r\n",
         "GROUP BY d.month_start, u.service"
       ]
@@ -39,7 +37,7 @@
         "   SELECT\r\n",
         "     SUM(CASE WHEN is_orphan_account THEN 1 ELSE 0 END) AS orphan_cases,\r\n",
         "     COUNT(*)                                            AS total_cases\r\n",
-        "   FROM salesforce_dev.gold.fact_case"
+        "   FROM gold.fact_case"
       ]
     },
     {
@@ -49,7 +47,7 @@
         "SELECT industry,\r\n",
         "       SUM(usage_amount_aud) AS usage_amount_aud,\r\n",
         "       SUM(cases_opened)     AS cases_opened\r\n",
-        "FROM salesforce_dev.gold.agg_account_monthly\r\n",
+        "FROM gold.agg_account_monthly\r\n",
         "WHERE account_id <> 'UNKNOWN'\r\n",
         "GROUP BY industry"
       ]
@@ -59,7 +57,7 @@
       "name": "7943f4e8",
       "queryLines": [
         "SELECT status, priority, COUNT(*) AS cases\r\n",
-        "FROM salesforce_dev.gold.fact_case\r\n",
+        "FROM gold.fact_case\r\n",
         "WHERE NOT is_orphan_account\r\n",
         "GROUP BY status, priority"
       ]
