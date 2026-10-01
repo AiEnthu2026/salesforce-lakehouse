@@ -32,4 +32,10 @@ targets:
       host: https://adb-7405611900530243.3.azuredatabricks.net/
     variables:
       catalog_name: salesforce_staging
-      pipeline_dev_mode: false    
+      pipeline_dev_mode: false
+  prod:
+    workspace:
+      host: https://adb-7405611900530243.3.azuredatabricks.net/
+    variables:
+      catalog_name: salesforce_prod
+      pipeline_dev_mode: false
