@@ -1,0 +1,27 @@
+{
+	"name": "ds_landing_bin",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_adls_landing",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"folder": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().folder",
+					"type": "Expression"
+				},
+				"fileSystem": "salesforce"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

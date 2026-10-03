@@ -1,0 +1,34 @@
+{
+	"name": "ds_src_blob_usage_bin",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_src_blob_usage",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"folder": {
+				"type": "string"
+			},
+			"file": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().file",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().folder",
+					"type": "Expression"
+				},
+				"container": "src-blob-usage"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

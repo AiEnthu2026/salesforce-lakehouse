@@ -1,0 +1,36 @@
+name: E2E Tests (prod)
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salesforce-prod
+  cancel-in-progress: false
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: prod
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      BUNDLE_VAR_catalog_name: ${{ vars.CATALOG_NAME }}
+      BUNDLE_VAR_landing_base: ${{ secrets.LANDING_BASE }}
+      BUNDLE_VAR_notification_email: ${{ secrets.NOTIFICATION_EMAIL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@v1.19.0
+
+      - name: Deploy bundle to prod
+        run: databricks bundle deploy -t prod
+
+      - name: Run e2e tests
+        run: databricks bundle run salesforce_test_suite -t prod --params test_path=e2e

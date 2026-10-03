@@ -1,0 +1,15 @@
+{
+	"name": "adf-salesforce-dev-f9k5",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "australiaeast",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "3ca28fd4-42a4-46a4-a8e4-e714268563d9",
+		"tenantId": "b0375064-d06f-46e0-ba17-6f15110b5081"
+	}
+}

@@ -1,0 +1,4 @@
+Faker==40.40.0
+tzdata==2026.4
+pyodbc=5.3.0
+azure-identity=1.26.0

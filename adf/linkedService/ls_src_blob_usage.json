@@ -1,0 +1,12 @@
+{
+	"name": "ls_src_blob_usage",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "https://stsalesforcedevfed7.blob.core.windows.net/",
+			"accountKind": "StorageV2"
+		}
+	}
+}

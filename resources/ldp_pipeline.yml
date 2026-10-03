@@ -1,0 +1,36 @@
+resources:
+  schemas:
+    bronze:
+      catalog_name: ${var.catalog_name}
+      name: bronze
+      comment: Raw layer, data as landed
+    
+    silver:
+      catalog_name: ${var.catalog_name}
+      name: silver
+      comment: Cleaned, typed and deduplicated layer
+
+    gold:
+      catalog_name: ${var.catalog_name}
+      name: gold
+      comment: Business-ready layer for the dashboard
+
+  pipelines:
+    salesforce_ldp_pipeline:
+      name: salesforce_ldp_${bundle.target}
+      catalog: ${var.catalog_name}
+      schema: ${resources.schemas.bronze.name}
+      serverless: true
+      development: ${var.pipeline_dev_mode}
+      root_path: ..
+      libraries:
+        - glob:
+            include: ../ldp_pipelines/**
+      configuration:
+        landing_base: ${var.landing_base}
+      notifications:
+        - email_recipients:
+            - ${var.notification_email}
+          alerts:
+            - on-update-failure
+            - on-update-fatal-failure

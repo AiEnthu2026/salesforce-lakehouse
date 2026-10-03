@@ -1,0 +1,36 @@
+name: Integration Tests (staging)
+
+on:
+  push:
+    branches: [staging]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: salesforce-staging
+  cancel-in-progress: false
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      BUNDLE_VAR_catalog_name: ${{ vars.CATALOG_NAME }}
+      BUNDLE_VAR_landing_base: ${{ secrets.LANDING_BASE }}
+      BUNDLE_VAR_notification_email: ${{ secrets.NOTIFICATION_EMAIL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@v1.19.0
+
+      - name: Deploy bundle to staging
+        run: databricks bundle deploy -t staging
+
+      - name: Run integration tests
+        run: databricks bundle run salesforce_test_suite -t staging --params test_path=integration

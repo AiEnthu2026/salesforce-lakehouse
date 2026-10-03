@@ -1,0 +1,43 @@
+bundle:
+  name: salesforce-lakehouse
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog_name:
+    description: Unity Catalog catalog for this environment
+  pipeline_dev_mode:
+    description: LDP development mode, true for dev only
+    default: false
+  landing_base:
+    description: abfss URL of the landing root, no trailing slash
+  warehouse_id:
+    description: SQL warehouse that runs the dashboard queries
+    lookup:
+      warehouse: "Serverless Starter Warehouse"
+  notification_email:
+    description: Email address alerted on pipeline failure
+
+targets:
+  dev:
+    default: true
+    # The workspace host is hardcoded on purpose, so a misconfigured CI variable
+    # cannot redirect a deploy.
+    workspace:
+      host: https://adb-7405611900530243.3.azuredatabricks.net/
+    variables:
+      catalog_name: salesforce_dev
+      pipeline_dev_mode: true
+  staging:
+    workspace:
+      host: https://adb-7405611900530243.3.azuredatabricks.net/
+    variables:
+      catalog_name: salesforce_staging
+      pipeline_dev_mode: false
+  prod:
+    workspace:
+      host: https://adb-7405611900530243.3.azuredatabricks.net/
+    variables:
+      catalog_name: salesforce_prod
+      pipeline_dev_mode: false

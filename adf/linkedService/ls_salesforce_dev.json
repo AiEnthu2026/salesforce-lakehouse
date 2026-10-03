@@ -1,0 +1,22 @@
+{
+	"name": "ls_salesforce_dev",
+	"properties": {
+		"annotations": [],
+		"type": "SalesforceV2",
+		"typeProperties": {
+			"environmentUrl": "https://orgfarm-b1d2bc48c7-dev-ed.develop.my.salesforce.com",
+			"clientId": "3MVG9XgkMlifdwVDeDBxs6H8jmnHqhWNeK1odhrWEUvSWjrWCFxgovoiLHM75pAMmYY8DOynM.bYk_6VnCkzJ",
+			"clientSecret": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_kv_salesforce",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "sf-client-secret",
+				"secretVersion": "9ce6170b5c17466fa1cc1373f36afd73"
+			},
+			"apiVersion": "67.0",
+			"authenticationType": "OAuth2ClientCredential"
+		}
+	}
+}
