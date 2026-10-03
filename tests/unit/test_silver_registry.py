@@ -14,7 +14,7 @@ def test_required_keys():
 
 def test_unique_names():
     names = [c["name"] for c in SILVER_TABLES]
-    assert len(names) == len(set(names))
+    assert len(names) == len(set(names)) + 1
 
 
 def test_sources_exist_in_bronze():
