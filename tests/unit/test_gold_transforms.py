@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath("../.."))
 
 from datetime import date, datetime
 
-from utils.gold_transforms import add_revenue_band, build_date_dim, build_fact_case
+from utils.gold_transforms import add_revenue_band, build_date_dim, build_fact_case, select_current_contract
 
 
 def test_revenue_band():
@@ -82,3 +82,17 @@ def test_fact_case_escalation_from_flag_or_status():
         "null_flag_other_status": False,
         "null_status": False,
     }
+
+def test_select_current_contract_one_row_per_ref_latest_wins():
+    contracts = spark.createDataFrame(
+        [
+            ("K1", "C1", "Bronze", date(2025, 1, 1)),
+            ("K2", "C1", "Silver", date(2026, 1, 2)),
+            ("K3", "C2", "Gold", date(2026, 1, 1)),
+            ("K4", "C3", "Gold", date(2026, 1, 1)),
+            ("K5", "C3", "Platinum", date(2026, 1, 1)),
+        ],
+        "contract_id string, customer_ref string, contract_tier string, contract_start date",
+    )
+    rows = {r.customer_ref: r.contract_id for r in select_current_contract(contracts).collect()}
+    assert rows == {"C1": "K2", "C2": "K3", "C3": "K5"}
