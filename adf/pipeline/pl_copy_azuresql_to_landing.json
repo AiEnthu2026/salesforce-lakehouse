@@ -55,7 +55,7 @@
 						"referenceName": "ds_landing_parquet",
 						"type": "DatasetReference",
 						"parameters": {
-							"folder": "landing/salesforce/account/2026-09-29"
+							"folder": "landing/azure_sql/account_contracts/2026-09-29"
 						}
 					}
 				]
