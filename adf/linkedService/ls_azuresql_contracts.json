@@ -1,0 +1,14 @@
+{
+	"name": "ls_azuresql_contracts",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "sql-salesforce-dev-kg05.database.windows.net",
+			"database": "sqldb-contracts",
+			"encrypt": "mandatory",
+			"trustServerCertificate": false,
+			"authenticationType": "SystemAssignedManagedIdentity"
+		}
+	}
+}
