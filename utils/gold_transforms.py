@@ -76,3 +76,9 @@ def select_current_contract(contracts):
         .where("_rn = 1")
         .drop("_rn")
     )
+
+def add_contract_tier(accounts, contracts):
+    current = select_current_contract(contracts).select("customer_ref", "contract_tier")
+    return accounts.join(current, "customer_ref", "left").withColumn(
+        "contract_tier", F.coalesce(F.col("contract_tier"), F.lit("NO_CONTRACT"))
+    )
