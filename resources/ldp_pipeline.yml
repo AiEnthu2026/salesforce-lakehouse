@@ -28,3 +28,9 @@ resources:
             include: ../ldp_pipelines/**
       configuration:
         landing_base: ${var.landing_base}
+      notifications:
+        - email_recipients:
+            - ${var.notification_email}
+          alerts:
+            - on-update-failure
+            - on-update-fatal-failure
