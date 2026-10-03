@@ -20,7 +20,6 @@ jobs:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
       BUNDLE_VAR_catalog_name: ${{ vars.CATALOG_NAME }}
-      BUNDLE_VAR_storage_account_name: ${{ secrets.STORAGE_ACCOUNT_NAME }}
       BUNDLE_VAR_landing_base: ${{ secrets.LANDING_BASE }}
       BUNDLE_VAR_notification_email: ${{ secrets.NOTIFICATION_EMAIL }}
 

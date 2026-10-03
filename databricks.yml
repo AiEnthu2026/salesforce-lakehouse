@@ -16,8 +16,6 @@ variables:
     description: SQL warehouse that runs the dashboard queries
     lookup:
       warehouse: "Serverless Starter Warehouse"
-  storage_account_name:
-    description: Azure storage account backing the raw landing volume
   notification_email:
     description: Email address alerted on pipeline failure
 
