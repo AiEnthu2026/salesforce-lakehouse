@@ -1,4 +1,5 @@
 from pyspark.sql import DataFrame
+from pyspark.sql.window import Window
 from pyspark.sql import functions as F
 
 
@@ -64,4 +65,20 @@ def build_fact_case(cases: DataFrame, accounts: DataFrame) -> DataFrame:
             closed.isNotNull(),
             (F.unix_timestamp(closed) - F.unix_timestamp(created)) / 3600,
         ).alias("hours_to_close"),
+    )
+
+def select_current_contract(contracts):
+    latest_first = Window.partitionBy("customer_ref").orderBy(
+        F.col("contract_start").desc(), F.col("contract_id").desc()
+    )
+    return (
+        contracts.withColumn("_rn", F.row_number().over(latest_first))
+        .where("_rn = 1")
+        .drop("_rn")
+    )
+
+def add_contract_tier(accounts, contracts):
+    current = select_current_contract(contracts).select("customer_ref", "contract_tier")
+    return accounts.join(current, "customer_ref", "left").withColumn(
+        "contract_tier", F.coalesce(F.col("contract_tier"), F.lit("NO_CONTRACT"))
     )

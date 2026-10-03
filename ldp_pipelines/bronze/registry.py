@@ -31,4 +31,13 @@ BRONZE_SOURCES = [
         "options": {},
         "check_rescued": False,
     },
+    {
+        "table": "sql_account_contracts",
+        "landing_subpath": "azure_sql/account_contracts",
+        "format": "parquet",
+        "glob": "*.parquet",
+        "options": {},
+        "check_rescued": False,
+    },
+    
 ]

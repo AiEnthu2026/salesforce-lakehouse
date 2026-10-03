@@ -78,3 +78,13 @@ resource "databricks_catalog" "salesforce_staging" {
     collation = "UTF8_BINARY"
   }
 }
+
+resource "databricks_catalog" "salesforce_prod" {
+  name         = "${var.project_name}_prod"
+  storage_root = "${databricks_external_location.salesforce_managed.url}/prod"
+  comment      = "Salesforce lakehouse: prod"
+
+  properties = {
+    collation = "UTF8_BINARY"
+  }
+}
