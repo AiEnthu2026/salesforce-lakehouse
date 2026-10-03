@@ -1,0 +1,66 @@
+{
+	"name": "pl_copy_azuresql_to_landing",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy Account Contracts",
+				"description": "Copy Account Contracts from AzureSQL",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_sql_table",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema": "dbo",
+							"table_name": "account_contracts"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_landing_parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folder": "landing/azure_sql/account_contracts/2026-09-29"
+						}
+					}
+				]
+			}
+		],
+		"annotations": []
+	}
+}
