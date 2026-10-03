@@ -1,0 +1,5 @@
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'$(ADF_NAME)')
+BEGIN
+    CREATE USER [$(ADF_NAME)] FROM EXTERNAL PROVIDER;
+END
+ALTER ROLE db_datareader ADD MEMBER [$(ADF_NAME)];
