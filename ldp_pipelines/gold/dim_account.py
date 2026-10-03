@@ -1,6 +1,7 @@
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
 
+from utils.gold_transforms import add_contract_tier, add_revenue_band
 
 @dp.materialized_view(
     name="gold.dim_account",
@@ -30,10 +31,6 @@ def dim_account():
         F.lit("Unknown account").alias("account_name"),
     )
 
-    return accounts.unionByName(unknown, allowMissingColumns=True).withColumn(
-        "revenue_band",
-        F.when(F.col("annual_revenue") >= 10_000_000, "Large")
-        .when(F.col("annual_revenue") >= 1_000_000, "Mid")
-        .when(F.col("annual_revenue").isNotNull(), "Small")
-        .otherwise("Unknown"),
-    )
+    unioned = accounts.unionByName(unknown, allowMissingColumns=True)
+    enriched = add_contract_tier(unioned, spark.read.table("silver.account_contract"))
+    return add_revenue_band(enriched)
