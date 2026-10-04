@@ -1,7 +1,7 @@
 name: E2E Tests (prod)
 
 on:
-  push:
+  pull_request:
     branches: [main]
 
 permissions:
