@@ -42,3 +42,15 @@ variable "allowed_ip_ranges" {
   type        = list(string)
   sensitive   = true
 }
+
+variable "start_allowed_ip" {
+  description = "Start public IP address allowed to reach sql server"
+  type        = string
+  sensitive   = true
+}
+
+variable "end_allowed_ip" {
+  description = "End public IP address allowed to reach sql server"
+  type        = string
+  sensitive   = true
+}
