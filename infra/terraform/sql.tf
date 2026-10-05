@@ -18,7 +18,7 @@ resource "azurerm_mssql_server" "contracts" {
   minimum_tls_version = "1.2"
 
   azuread_administrator {
-    login_username              = "${var.admin_username}"
+    login_username              = var.admin_username
     object_id                   = data.azurerm_client_config.current.object_id
     azuread_authentication_only = true
   }
@@ -29,4 +29,18 @@ resource "azurerm_mssql_database" "contracts" {
   server_id   = azurerm_mssql_server.contracts.id
   sku_name    = "Basic"
   max_size_gb = 2
+}
+
+resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
+  name             = "AllowAllWindowsAzureIps"
+  server_id        = azurerm_mssql_server.contracts.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
+}
+
+resource "azurerm_mssql_firewall_rule" "allow_my_ip" {
+  name             = "allow-my-ip"
+  server_id        = azurerm_mssql_server.contracts.id
+  start_ip_address = var.start_allowed_ip
+  end_ip_address   = var.end_allowed_ip
 }
