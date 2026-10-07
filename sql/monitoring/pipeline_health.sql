@@ -4,7 +4,6 @@
  Notes:
   - Durations cover SUCCEEDED runs only, so failed/cancelled runs don't skew the baseline.
   - Staging and prod have few runs, so treat p95 as a rough baseline, not an SLA.
-  - Realtime duration is set by poll_duration_seconds, so it is not a health signal.
 */
 WITH runs AS (
   SELECT
