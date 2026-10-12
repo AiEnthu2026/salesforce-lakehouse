@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: stg_gold__dim_account
+    description: One row per account, selected from the Gold dim_account table.
+    columns:
+      - name: account_id
+        description: Account identifier, the primary key of the dimension.
+        data_tests:
+          - unique
+          - not_null
