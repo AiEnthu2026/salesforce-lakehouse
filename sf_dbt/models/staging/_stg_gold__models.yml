@@ -9,3 +9,51 @@ models:
         data_tests:
           - unique
           - not_null
+  - name: stg_gold__dim_contact
+    columns:
+      - name: contact_id
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_gold__dim_date
+    columns:
+      - name: date_key
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_gold__fact_case
+    columns:
+      - name: case_id
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_gold__fact_usage
+    columns:
+      - name: usage_id
+        data_tests:
+          - unique
+          - not_null
+  - name: stg_gold__agg_account_monthly
+    columns:
+      - name: account_month_key
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
+      - name: month_start
+        data_tests:
+          - not_null
+  - name: stg_gold__agg_contract_vs_usage
+    columns:
+      - name: account_month_key
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
+      - name: month_start
+        data_tests:
+          - not_null
