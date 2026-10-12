@@ -9,6 +9,13 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: contract_tier
+        description: Contract tier of the account. NO_CONTRACT covers accounts without a contract, including the UNKNOWN account.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Platinum', 'Gold', 'Silver', 'Bronze', 'NO_CONTRACT']
 
   - name: stg_gold__dim_contact
     description: One row per contact, selected from gold.dim_contact.
@@ -19,7 +26,7 @@ models:
           - unique
           - not_null
       - name: account_id
-        description: Account the contact belongs to.
+        description: Account the contact belongs to. 20 contacts reference 12 account IDs that are not in dim_account (orphans).
         data_tests:
           - relationships:
               arguments:
@@ -53,6 +60,20 @@ models:
               arguments:
                 to: ref('stg_gold__dim_account')
                 field: account_id
+      - name: status
+        description: Case status.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['New', 'Working', 'Escalated', 'Closed']
+      - name: priority
+        description: Case priority.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['High', 'Medium', 'Low']
 
   - name: stg_gold__fact_usage
     description: One row per usage event, selected from gold.fact_usage.
@@ -69,6 +90,13 @@ models:
               arguments:
                 to: ref('stg_gold__dim_account')
                 field: account_id
+      - name: service
+        description: Service the usage event belongs to.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['storage', 'support', 'compute', 'licensing']
 
   - name: stg_gold__agg_account_monthly
     description: One row per account and month. account_month_key is built in this model from account_id and month_start.
