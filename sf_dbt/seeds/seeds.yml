@@ -1,0 +1,8 @@
+version: 2
+
+seeds:
+  - name: account_tiers_demo
+    description: Controlled demo data for the snapshot, made-up accounts that are not related to the Gold tables.
+    config:
+      column_types:
+        updated_at: timestamp
