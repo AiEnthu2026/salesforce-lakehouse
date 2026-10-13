@@ -1,0 +1,129 @@
+version: 2
+
+models:
+  - name: stg_gold__dim_account
+    description: One row per account, selected from gold.dim_account.
+    columns:
+      - name: account_id
+        description: Account identifier, the key of the dimension.
+        data_tests:
+          - unique
+          - not_null
+      - name: contract_tier
+        description: Contract tier of the account. NO_CONTRACT covers accounts without a contract, including the UNKNOWN account.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Platinum', 'Gold', 'Silver', 'Bronze', 'NO_CONTRACT']
+
+  - name: stg_gold__dim_contact
+    description: One row per contact, selected from gold.dim_contact.
+    columns:
+      - name: contact_id
+        description: Contact identifier.
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        description: Account the contact belongs to. 20 contacts reference 12 account IDs that are not in dim_account (orphans).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_gold__dim_account')
+                field: account_id
+              config:
+                warn_if: ">0"
+                error_if: ">20"
+
+  - name: stg_gold__dim_date
+    description: One row per calendar day, selected from gold.dim_date.
+    columns:
+      - name: date_key
+        description: Integer date key.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_gold__fact_case
+    description: One row per support case, selected from gold.fact_case. Orphan cases are flagged by is_orphan_account.
+    columns:
+      - name: case_id
+        description: Case identifier.
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        description: Account the case is attached to.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_gold__dim_account')
+                field: account_id
+      - name: status
+        description: Case status.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['New', 'Working', 'Escalated', 'Closed']
+      - name: priority
+        description: Case priority.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['High', 'Medium', 'Low']
+
+  - name: stg_gold__fact_usage
+    description: One row per usage event, selected from gold.fact_usage.
+    columns:
+      - name: usage_id
+        description: Usage event identifier.
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        description: Account the usage belongs to.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_gold__dim_account')
+                field: account_id
+      - name: service
+        description: Service the usage event belongs to.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['storage', 'support', 'compute', 'licensing']
+
+  - name: stg_gold__agg_account_monthly
+    description: One row per account and month. account_month_key is built in this model from account_id and month_start.
+    columns:
+      - name: account_month_key
+        description: Built key, account_id and month_start joined with a pipe.
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
+      - name: month_start
+        data_tests:
+          - not_null
+
+  - name: stg_gold__agg_contract_vs_usage
+    description: One row per account and month, comparing committed contract spend with actual usage. account_month_key is built in this model.
+    columns:
+      - name: account_month_key
+        description: Built key, account_id and month_start joined with a pipe.
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
+      - name: month_start
+        data_tests:
+          - not_null
