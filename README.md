@@ -21,6 +21,7 @@ flowchart LR
   D --> E[(ADLS Gen2 landing)]
   E --> F[LDP Bronze] --> G[LDP Silver] --> H[LDP Gold]
   H --> I[AI/BI dashboard]
+  H --> J[dbt staging, intermediate and marts]
 ```
 
 ## Data
@@ -40,6 +41,7 @@ All data is synthetic. A seeded generator in `data_generator/` creates the Sales
 | `data_generator/` | Synthetic data generator and the Azure SQL loader |
 | `sql/` | Azure SQL setup scripts and a job-health query over system tables |
 | `tests/` | `unit`, `integration` and `e2e` tiers |
+| `sf_dbt/` | dbt Core project over Gold: staging, intermediate, marts, tests and a demo snapshot |
 | `docs/` | Cloud requirements and dashboard snapshots |
 | `.github/` | Workflows for each gate, and exported branch rulesets |
 
@@ -60,6 +62,14 @@ Rulesets (exported in `.github/rulesets/`) require pull requests, merge commits 
 ![Customer 360 Overview](docs/dashboards/customer_360_overview.jpg)
 
 The dashboard shows revenue, cases opened and escalated, and account counts, with usage revenue by month and service, cases by priority and status, and usage by industry. Full PDF: [`Customer 360 Overview.pdf`](docs/dashboards/Customer%20360%20Overview.pdf)
+
+## dbt layer
+
+A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, an intermediate model, two marts, a reusable macro and a demo snapshot. It has 10 models and 50 tests, runs as its own least-privilege service principal that can read Gold and write only to its own schema (Gold write denial tested), and has one documented warning. See [sf_dbt/README.md](sf_dbt/README.md).
+
+![dbt lineage](docs/dbt/lineage-graph.png)
+
+Known gaps: the service principal, its schema and the warehouse permission were created by hand, and CI does not run dbt yet.
 
 ## Design decisions
 
@@ -84,15 +94,17 @@ The dashboard shows revenue, cases opened and escalated, and account counts, wit
 - No required reviewers between stages (solo project).
 - The storage account name appears in the ADF landing linked service JSON. It is an identifier, not a credential; access needs Entra authentication.
 - The workspace host is committed in `databricks.yml` deliberately, so a misconfigured CI variable cannot send a deploy to another workspace. It is an identifier, not a credential.
+- dbt uses its own service principal, while CI still uses a personal access token.
 
 ## Known gaps
 
 - The Network Security Perimeter associations are in learning mode, not Enforced.
 - The Key Vault holding the Salesforce secret was created by hand and is not yet in Terraform.
-- Contracts are SCD Type 1, with renewals modelled as new contracts. SCD Type 2 is the next step, and incremental loads of changed contracts are untested.
+- Contracts are SCD Type 1, with renewals modelled as new contracts. SCD Type 2 is demonstrated only on demo data in `sf_dbt/`, not in the pipeline, and incremental loads of changed contracts are untested.
 - ADF copies to landing, but triggering the Databricks pipeline from ADF is a planned step.
 - Revenue band is `Unknown` for every account because the generator sets no annual revenue. The banding logic is unit tested.
-- Twenty-six cases map to an `UNKNOWN` account; their origin has not been confirmed.
+- Twenty-six cases map to an `UNKNOWN` account; consistent with sample records that exist in the Developer Edition org, not yet confirmed.
+- `dim_contact` keeps the raw account ID for 20 contacts whose accounts are missing from `dim_account`, while the fact tables map such rows to UNKNOWN. `sf_dbt` flags and maps them, and the pipeline fix is planned.
 
 ## Data and trademarks
 
