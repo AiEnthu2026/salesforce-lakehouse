@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: gold
+    schema: gold
+    description: Gold layer built by the LDP pipeline. dbt reads it and never writes to it.
+    tables:
+      - name: agg_account_monthly
+      - name: agg_contract_vs_usage
+      - name: dim_account
+      - name: dim_contact
+      - name: dim_date
+      - name: fact_case
+      - name: fact_usage

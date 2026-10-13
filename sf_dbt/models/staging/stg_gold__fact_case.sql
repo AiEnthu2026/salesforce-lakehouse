@@ -1,0 +1,20 @@
+select
+    case_id,
+    case_number,
+    account_id,
+    source_account_id,
+    is_orphan_account,
+    contact_id,
+    status,
+    priority,
+    origin,
+    case_type,
+    reason,
+    is_closed,
+    is_escalated,
+    created_date_key,
+    closed_date_key,
+    created_at,
+    closed_at,
+    hours_to_close
+from {{ source('gold', 'fact_case') }}

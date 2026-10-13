@@ -54,3 +54,8 @@ variable-overrides.json
 backend.hcl
 data/
 .venv/
+
+# dbt
+target/
+dbt_packages/
+logs/
