@@ -61,6 +61,7 @@ lagged as (
 select
     account_month_key,
     account_id,
+    account_id = 'UNKNOWN' as is_unknown_account,
     month_start,
     account_name,
     industry,
@@ -70,8 +71,9 @@ select
     contract_tier,
     committed_monthly_aud,
     utilisation_pct,
-    variance_aud,
+    variance_aud,    
     case
+        when committed_monthly_aud is null and coalesce(usage_events, 0) = 0 then 'no_usage'
         when committed_monthly_aud is null then 'no_commitment'
         when utilisation_pct < {{ var('util_under_pct') }} then 'under'
         when utilisation_pct <= {{ var('util_over_pct') }} then 'on_track'

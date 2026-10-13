@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: mart_account_monthly_health
+    description: One row per account and month, with contract utilisation, escalation rate and usage trend. Driven by the monthly aggregate, with the contract table left joined. Months with no usage and no contract row are labelled no_usage, and accounts with usage but no commitment are labelled no_commitment. Month-over-month change is null when the previous month is missing. The UNKNOWN account is a catch-all for orphaned cases, and its status is not a customer health measure. Thresholds for commit_status are the util_under_pct and util_over_pct project variables.
+    columns:
+      - name: account_month_key
+        description: Built key, account_id and month_start joined with a pipe.
+        data_tests:
+          - unique
+          - not_null
+      - name: is_unknown_account
+        description: True for the UNKNOWN catch-all account, which holds cases that could not be matched to an account.
+        data_tests:
+          - not_null
+      - name: commit_status
+        description: Utilisation band against the commitment, or no_usage and no_commitment where there is nothing to compare.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['no_usage', 'no_commitment', 'under', 'on_track', 'over']
