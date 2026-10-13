@@ -20,3 +20,26 @@ models:
           - accepted_values:
               arguments:
                 values: ['no_usage', 'no_commitment', 'under', 'on_track', 'over']
+
+  - name: mart_account_360
+    description: One row per account, built from dim_account. Contacts, cases and usage are aggregated to account grain before joining, so the joins cannot fan out. The UNKNOWN account is a catch-all for orphaned cases and contacts. latest_commit_status comes from mart_account_monthly_health and is null for accounts with no monthly row.
+    columns:
+      - name: account_id
+        description: Account identifier, the key of the mart.
+        data_tests:
+          - unique
+          - not_null
+      - name: is_unknown_account
+        description: True for the UNKNOWN catch-all account.
+        data_tests:
+          - not_null
+      - name: contact_count
+        data_tests:
+          - not_null
+      - name: cases_total
+        data_tests:
+          - not_null
+      - name: lifetime_usage_aud
+        description: Sum of usage amounts across all months, reconciled to fact_usage.
+        data_tests:
+          - not_null
