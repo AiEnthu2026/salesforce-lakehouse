@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: int_contacts_resolved
+    description: One row per contact. Contacts whose account is missing from dim_account are mapped to the UNKNOWN account and flagged. The raw ID is kept in source_account_id.
+    columns:
+      - name: contact_id
+        data_tests:
+          - unique
+          - not_null
+      - name: account_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_gold__dim_account')
+                field: account_id
+      - name: is_orphan_account
+        data_tests:
+          - not_null

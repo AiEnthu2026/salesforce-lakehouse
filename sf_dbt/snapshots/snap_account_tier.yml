@@ -1,0 +1,7 @@
+snapshots:
+  - name: snap_account_tier
+    relation: ref('account_tiers_demo')
+    config:
+      unique_key: account_id
+      strategy: timestamp
+      updated_at: updated_at
