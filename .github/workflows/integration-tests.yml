@@ -34,3 +34,81 @@ jobs:
 
       - name: Run integration tests
         run: databricks bundle run salesforce_test_suite -t staging --params test_path=integration
+
+  dbt-build:
+    needs: integration-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    env:
+      DBT_DATABRICKS_CLIENT_ID: ${{ secrets.DBT_DATABRICKS_CLIENT_ID }}
+      DBT_DATABRICKS_CLIENT_SECRET: ${{ secrets.DBT_DATABRICKS_CLIENT_SECRET }}
+      DBT_HTTP_PATH: ${{ vars.DBT_HTTP_PATH }}
+      DBT_CATALOG: ${{ vars.CATALOG_NAME }}
+      RAW_HOST: ${{ secrets.DATABRICKS_HOST }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dbt.txt
+
+      - name: Install dbt
+        run: pip install -r requirements-dbt.txt
+
+      - name: Normalise host for dbt
+        run: |
+          host="${RAW_HOST#https://}"
+          echo "DBT_DATABRICKS_HOST=${host%/}" >> "$GITHUB_ENV"
+
+      - name: Clean schema (pre)
+        working-directory: sf_dbt
+        run: dbt run-operation clean_target_schema --profiles-dir ci --target staging
+
+      - name: dbt build
+        working-directory: sf_dbt
+        run: dbt build --profiles-dir ci --target staging
+
+      - name: Summarise results
+        if: always()
+        working-directory: sf_dbt
+        run: |
+          python - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import json, os, collections
+          path = "target/run_results.json"
+          if not os.path.exists(path):
+              print("No run_results.json produced (failed before build).")
+          else:
+              r = json.load(open(path))
+              c = collections.Counter(x["status"] for x in r["results"])
+              print("### dbt build results")
+              for k, v in sorted(c.items()):
+                  print(f"- {k}: {v}")
+              for x in r["results"]:
+                  if x["status"] in ("error", "fail", "warn"):
+                      print(f"- {x['status'].upper()} {x['unique_id']}: {x.get('message')}")
+          EOF
+
+      - name: Upload dbt artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-results
+          path: |
+            sf_dbt/target/run_results.json
+            sf_dbt/target/manifest.json
+          retention-days: 14
+
+      - name: Clean schema (post)
+        if: always()
+        working-directory: sf_dbt
+        run: dbt run-operation clean_target_schema --profiles-dir ci --target staging
+
+      - name: Assert schema empty
+        if: always()
+        working-directory: sf_dbt
+        run: dbt run-operation assert_schema_empty --profiles-dir ci --target staging
