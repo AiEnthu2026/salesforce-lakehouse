@@ -7,14 +7,14 @@ A dbt Core project over the Gold layer of this repository. It reads the seven Go
 *Lineage with tests hidden: 7 Gold sources feed 7 staging views, then an intermediate model and two marts. The seed and snapshot at the top are a separate demo on controlled data.*
 
 ## Status
-The dbt layer is complete: staging, one intermediate model, two marts, reusable macros, a demo snapshot and logic tests.
+The dbt layer is complete: staging, one intermediate model, two marts, reusable macros, a demo snapshot, logic tests and SCD2 scenario checks.
 
 ## What is in it
 - 7 sources (the Gold tables) and 7 staging views
 - 1 intermediate model, `int_contacts_resolved`, which maps orphan contacts to the UNKNOWN account and flags them
 - 2 marts: `mart_account_monthly_health` (one row per account and month) and `mart_account_360` (one row per account)
 - Macros: `safe_divide` (with a logic test), `write_probe` and `drop_probe` for permission tests, and four CI macros: `guard_ci_target`, `list_schema_relations`, `clean_target_schema` and `assert_schema_empty`
-- 1 seed and 1 snapshot (SCD Type 2), demonstrated on controlled demo data because the Gold data does not change
+- 1 seed and 1 snapshot (SCD Type 2), demonstrated on controlled demo data because the Gold data does not change; four manual scenarios check its history, see [scenarios/scd2](scenarios/scd2/README.md)
 - 50 data tests: 29 on staging, 5 on the intermediate model, 8 on the first mart, 7 on the second mart, 1 on the macro
 - Last full run: 61 passed, 1 warning, 0 errors (10 models, 50 tests, 1 seed, 1 snapshot), also run on every pull request into staging.
 
@@ -75,6 +75,9 @@ dbt build --profiles-dir ci --target staging
 
 Each run starts and ends with an empty `dbt_staging` schema (`clean_target_schema`), and `assert_schema_empty` fails the job if anything is left behind. The guard macro refuses to run unless the target is `staging` and the schema starts with `dbt_`, so cleanup can never touch Gold. The run summary and `run_results.json` are published for each run. A deliberately broken test turned the check red and blocked the merge (PR #17). The service principal's grants are applied by a manual, recorded notebook (`ci/dbt-grants.ipynb`), with Terraform planned. See [ci/README.md](ci/README.md).
 
+## SCD2 scenarios
+Four manual scenarios (initial load, row update, row addition, mixed) run against `snap_account_tier` in the staging catalog, with expected row counts and annotated screenshots of the snapshot table after each step. See [scenarios/scd2/README.md](scenarios/scd2/README.md).
+
 ## Design choices
 - **dbt consumes Gold and does not rebuild it.** The pipeline owns ingestion through Gold. Tests guard keys, relationships and allowed values, and mart_account_360 reconciles to its sources. They do not verify that business definitions such as the utilisation bands are right.
 - **Staging models are views with explicit column lists.** A new Gold column does not flow through silently, and each model documents what dbt depends on.
@@ -88,8 +91,8 @@ Each run starts and ends with an empty `dbt_staging` schema (`clean_target_schem
 
 ## Known issues
 - 20 contacts reference 12 account IDs that are not in `dim_account`. `int_contacts_resolved` maps them to UNKNOWN and flags them. The missing accounts are 12 of the 13 Developer Edition sample accounts that fail the `customer_ref` rule and sit in `silver.account_quarantine`. The warning on `stg_gold__dim_contact` stays to document the upstream difference, and the pipeline fix is on the backlog.
-- Tables created by dbt are owned by its service principal, so reading them as a person needs an explicit grant on `dbt_dev`.
-- The SCD2 snapshot is a demonstration on controlled seed data, not on pipeline data.
+- Tables created by dbt are owned by its service principal, so reading them as a person needs an explicit grant on `dbt_dev` and `dbt_staging`.
+- The SCD2 snapshot is a demonstration on controlled seed data, not on pipeline data. Its behaviour is checked by four manual scenarios [scenarios/scd2](scenarios/scd2/README.md), not automated in CI.
 - "Staging" here means the model layer, not the staging environment.
 - The service principal, the `dbt_dev` and `dbt_staging` schemas and the warehouse permission were created by hand, not in Terraform.
 - The snapshot demo cannot be reproduced from a fresh clone, because the committed seed is the changed version. To replay it, check out the "add demo seed and tier snapshot" commit, run dbt seed and dbt snapshot, then check out the later commit and run them again.

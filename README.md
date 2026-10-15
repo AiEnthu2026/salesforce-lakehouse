@@ -41,7 +41,7 @@ All data is synthetic. A seeded generator in `data_generator/` creates the Sales
 | `data_generator/` | Synthetic data generator and the Azure SQL loader |
 | `sql/` | Azure SQL setup scripts and a job-health query over system tables |
 | `tests/` | `unit`, `integration` and `e2e` tiers |
-| `sf_dbt/` | dbt Core project over Gold: staging, intermediate, marts, tests and a demo snapshot |
+| `sf_dbt/` | dbt Core project over Gold: staging, intermediate, marts, tests, a demo snapshot and SCD2 scenarios (`sf_dbt/scenarios/scd2/`) |
 | `sf_dbt/ci/` | CI profile, one-time grants notebook and README. The schema-cleanup macros live in `sf_dbt/macros/` |
 | `docs/` | Cloud requirements and dashboard snapshots |
 | `.github/` | Workflows for each gate, and exported branch rulesets |
@@ -107,12 +107,12 @@ A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, a
 
 - The Network Security Perimeter associations are in learning mode, not Enforced.
 - The Key Vault holding the Salesforce secret was created by hand and is not yet in Terraform.
-- Contracts are SCD Type 1, with renewals modelled as new contracts. SCD Type 2 is demonstrated only on demo data in `sf_dbt/`, not in the pipeline, and incremental loads of changed contracts are untested.
+- Contracts are SCD Type 1, with renewals modelled as new contracts. SCD Type 2 is demonstrated only on demo data in `sf_dbt/` (four documented scenarios), not in the pipeline, and incremental loads of changed contracts are untested.
 - ADF copies to landing, but triggering the Databricks pipeline from ADF is a planned step.
 - Revenue band is `Unknown` for every account because the generator sets no annual revenue. The banding logic is unit tested.
 - Twenty-six cases map to an `UNKNOWN` account; consistent with sample records that exist in the Developer Edition org, not yet confirmed.
 - `dim_contact` keeps the raw account ID for 20 contacts whose accounts are missing from `dim_account`, while the fact tables map such rows to UNKNOWN. `sf_dbt` flags and maps them, and the pipeline fix is planned. The accounts are the quarantined sample accounts.
-- A four-scenario SCD2 test (initial load, row update, row addition, mixed) is planned, not built.
+- SCD Type 2 behaviour is checked by four scenario files (initial load, row update, row addition, mixed) in `sf_dbt/scenarios/scd2/`, run by hand against the demo snapshot with expected row counts and screenshots; it is not automated in CI.
 - The service principal's grants are applied by a manual notebook; moving them to Terraform is planned.
 - Dev and staging share one dbt service principal; separate principals per environment are planned.
 
