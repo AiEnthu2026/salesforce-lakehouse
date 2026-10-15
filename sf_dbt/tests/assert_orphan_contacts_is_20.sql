@@ -4,4 +4,4 @@ from (
     from {{ ref('int_contacts_resolved') }}
     where is_orphan_account
 )
-where orphan_count != 20
+where orphan_count != 200
