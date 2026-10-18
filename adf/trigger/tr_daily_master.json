@@ -3,7 +3,17 @@
 	"properties": {
 		"annotations": [],
 		"runtimeState": "Stopped",
-		"pipelines": [],
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pl_master_ingest_and_transform",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"run_date": "@formatDateTime(trigger().scheduledTime,'yyyy-MM-dd')"
+				}
+			}
+		],
 		"type": "ScheduleTrigger",
 		"typeProperties": {
 			"recurrence": {
