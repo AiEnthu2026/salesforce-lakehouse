@@ -105,6 +105,45 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "run_ldp_job",
+				"type": "DatabricksJob",
+				"dependsOn": [
+					{
+						"activity": "run_azuresql_copy",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "run_salesforce_copy",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "run_blob_usage_copy",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"jobId": "98487751207356"
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_dev",
+					"type": "LinkedServiceReference"
+				}
 			}
 		],
 		"parameters": {
