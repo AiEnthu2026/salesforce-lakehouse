@@ -55,8 +55,29 @@
 				]
 			}
 		],
+		"parameters": {
+			"run_date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"rd": {
+				"type": "String"
+			}
+		},
 		"annotations": [],
 		"lastPublishTime": "2026-09-29T06:42:35Z"
+	},
+	"parameters": {
+		"run_date": {
+			"type": "String",
+			"defaultValue": ""
+		}
+	},
+	"variables": {
+		"rd": {
+			"type": "String"
+		}
 	},
 	"type": "Microsoft.DataFactory/factories/pipelines"
 }
