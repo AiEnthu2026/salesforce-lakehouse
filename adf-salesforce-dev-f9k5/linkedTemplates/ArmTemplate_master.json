@@ -1,0 +1,98 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-salesforce-dev-f9k5"
+		},
+		"ls_adls_landing_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://sttfnswdevuxpm44.dfs.core.windows.net/"
+		},
+		"ls_azuresql_dev_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "sql-salesforce-dev-kg05.database.windows.net"
+		},
+		"ls_azuresql_dev_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "sqldb-contracts"
+		},
+		"ls_kv_salesforce_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://kv-salesforce-dev-abcd.vault.azure.net/"
+		},
+		"ls_salesforce_dev_properties_typeProperties_environmentUrl": {
+			"type": "string",
+			"defaultValue": "https://orgfarm-b1d2bc48c7-dev-ed.develop.my.salesforce.com"
+		},
+		"ls_salesforce_dev_properties_typeProperties_clientId": {
+			"type": "string",
+			"defaultValue": "3MVG9XgkMlifdwVDeDBxs6H8jmnHqhWNeK1odhrWEUvSWjrWCFxgovoiLHM75pAMmYY8DOynM.bYk_6VnCkzJ"
+		},
+		"ls_src_blob_usage_properties_typeProperties_serviceEndpoint": {
+			"type": "string",
+			"defaultValue": "https://stsalesforcedevfed7.blob.core.windows.net/"
+		},
+		"tr_daily_master_properties_pl_master_ingest_and_transform_parameters_run_date": {
+			"type": "string",
+			"defaultValue": "@convertFromUtc(trigger().scheduledTime, 'AUS Eastern Standard Time', 'yyyy-MM-dd')"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "adf-salesforce-dev-f9k5_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"ls_adls_landing_properties_typeProperties_url": {
+						"value": "[parameters('ls_adls_landing_properties_typeProperties_url')]"
+					},
+					"ls_azuresql_dev_properties_typeProperties_server": {
+						"value": "[parameters('ls_azuresql_dev_properties_typeProperties_server')]"
+					},
+					"ls_azuresql_dev_properties_typeProperties_database": {
+						"value": "[parameters('ls_azuresql_dev_properties_typeProperties_database')]"
+					},
+					"ls_kv_salesforce_properties_typeProperties_baseUrl": {
+						"value": "[parameters('ls_kv_salesforce_properties_typeProperties_baseUrl')]"
+					},
+					"ls_src_blob_usage_properties_typeProperties_serviceEndpoint": {
+						"value": "[parameters('ls_src_blob_usage_properties_typeProperties_serviceEndpoint')]"
+					},
+					"ls_salesforce_dev_properties_typeProperties_environmentUrl": {
+						"value": "[parameters('ls_salesforce_dev_properties_typeProperties_environmentUrl')]"
+					},
+					"ls_salesforce_dev_properties_typeProperties_clientId": {
+						"value": "[parameters('ls_salesforce_dev_properties_typeProperties_clientId')]"
+					},
+					"tr_daily_master_properties_pl_master_ingest_and_transform_parameters_run_date": {
+						"value": "[parameters('tr_daily_master_properties_pl_master_ingest_and_transform_parameters_run_date')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}

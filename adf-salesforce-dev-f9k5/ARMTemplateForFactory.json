@@ -1,0 +1,994 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-salesforce-dev-f9k5"
+		},
+		"ls_adls_landing_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://sttfnswdevuxpm44.dfs.core.windows.net/"
+		},
+		"ls_azuresql_dev_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "sql-salesforce-dev-kg05.database.windows.net"
+		},
+		"ls_azuresql_dev_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "sqldb-contracts"
+		},
+		"ls_kv_salesforce_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://kv-salesforce-dev-abcd.vault.azure.net/"
+		},
+		"ls_salesforce_dev_properties_typeProperties_environmentUrl": {
+			"type": "string",
+			"defaultValue": "https://orgfarm-b1d2bc48c7-dev-ed.develop.my.salesforce.com"
+		},
+		"ls_salesforce_dev_properties_typeProperties_clientId": {
+			"type": "string",
+			"defaultValue": "3MVG9XgkMlifdwVDeDBxs6H8jmnHqhWNeK1odhrWEUvSWjrWCFxgovoiLHM75pAMmYY8DOynM.bYk_6VnCkzJ"
+		},
+		"ls_src_blob_usage_properties_typeProperties_serviceEndpoint": {
+			"type": "string",
+			"defaultValue": "https://stsalesforcedevfed7.blob.core.windows.net/"
+		},
+		"tr_daily_master_properties_pl_master_ingest_and_transform_parameters_run_date": {
+			"type": "string",
+			"defaultValue": "@convertFromUtc(trigger().scheduledTime, 'AUS Eastern Standard Time', 'yyyy-MM-dd')"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_copy_azuresql_to_landing')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "set_run_date",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "rd",
+							"value": {
+								"value": "@if(empty(pipeline().parameters.run_date), convertFromUtc(utcnow(), 'AUS Eastern Standard Time', 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Copy Account Contracts",
+						"description": "Copy Account Contracts from AzureSQL",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.01:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_sql_table",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema": "dbo",
+									"table_name": "account_contracts"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_landing_parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folder": {
+										"value": "@concat('landing/azure_sql/account_contracts/', variables('rd'))",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"run_date": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"rd": {
+						"type": "String"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_sql_table')]",
+				"[concat(variables('factoryId'), '/datasets/ds_landing_parquet')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_copy_blob_usage_to_landing')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "set_run_date",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "rd",
+							"value": {
+								"value": "@if(empty(pipeline().parameters.run_date), convertFromUtc(utcnow(), 'AUS Eastern Standard Time', 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "copy_usage_to_landing",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.01:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_src_blob_usage_bin",
+								"type": "DatasetReference",
+								"parameters": {
+									"folder": "usage",
+									"file": {
+										"value": "@concat('usage_', replace(variables('rd'), '-', ''), '.csv')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_landing_bin",
+								"type": "DatasetReference",
+								"parameters": {
+									"folder": {
+										"value": "@concat('landing/blob_usage/', variables('rd'))",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"run_date": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"rd": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-09-29T06:42:35Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_src_blob_usage_bin')]",
+				"[concat(variables('factoryId'), '/datasets/ds_landing_bin')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_copy_salesforce_to_landing')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "set_run_date",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "rd",
+							"value": {
+								"value": "@if(empty(pipeline().parameters.run_date), convertFromUtc(utcnow(), 'AUS Eastern Standard Time', 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Copy Account",
+						"description": "Copy Account Data from Salesforce",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.01:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SalesforceV2Source",
+								"includeDeletedObjects": false,
+								"partitionOption": "AutoDetect",
+								"preserveScaleFromSchema": false
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_sf_account",
+								"type": "DatasetReference",
+								"parameters": {
+									"object": "Account"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_landing_parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folder": {
+										"value": "@concat('landing/salesforce/account/', variables('rd'))",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Copy Contact",
+						"description": "Copy Contact data from Salesforce",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.01:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SalesforceV2Source",
+								"includeDeletedObjects": false,
+								"partitionOption": "AutoDetect",
+								"preserveScaleFromSchema": false
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_sf_account",
+								"type": "DatasetReference",
+								"parameters": {
+									"object": "Contact"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_landing_parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folder": {
+										"value": "@concat('landing/salesforce/contact/', variables('rd'))",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Copy Case",
+						"description": "Copy Case from Salesforce",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.01:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SalesforceV2Source",
+								"includeDeletedObjects": false,
+								"partitionOption": "AutoDetect",
+								"preserveScaleFromSchema": false
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ds_sf_account",
+								"type": "DatasetReference",
+								"parameters": {
+									"object": "Case"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_landing_parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folder": {
+										"value": "@concat('landing/salesforce/case/', variables('rd'))",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"run_date": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"rd": {
+						"type": "String"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_sf_account')]",
+				"[concat(variables('factoryId'), '/datasets/ds_landing_parquet')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_master_ingest_and_transform')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "set_run_date",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "rd",
+							"value": {
+								"value": "@if(empty(pipeline().parameters.run_date), convertFromUtc(utcnow(), 'AUS Eastern Standard Time', 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "run_salesforce_copy",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pl_copy_salesforce_to_landing",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"run_date": {
+									"value": "@variables('rd')",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "run_azuresql_copy",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pl_copy_azuresql_to_landing",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"run_date": {
+									"value": "@variables('rd')",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "run_blob_usage_copy",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "set_run_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pl_copy_blob_usage_to_landing",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"run_date": {
+									"value": "@variables('rd')",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "run_ldp_job",
+						"type": "DatabricksJob",
+						"dependsOn": [
+							{
+								"activity": "run_azuresql_copy",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "run_salesforce_copy",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "run_blob_usage_copy",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.02:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 60,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"jobId": "98487751207356"
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_databricks_dev",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"run_date": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"rd": {
+						"type": "String"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/pl_copy_salesforce_to_landing')]",
+				"[concat(variables('factoryId'), '/pipelines/pl_copy_azuresql_to_landing')]",
+				"[concat(variables('factoryId'), '/pipelines/pl_copy_blob_usage_to_landing')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_databricks_dev')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_landing_bin')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_landing",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"folder": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().folder",
+							"type": "Expression"
+						},
+						"fileSystem": "salesforce"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_landing')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_landing_parquet')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_landing",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"folder": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().folder",
+							"type": "Expression"
+						},
+						"fileSystem": "salesforce"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_landing')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_sf_account')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_salesforce_dev",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"object": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "SalesforceV2Object",
+				"schema": [],
+				"typeProperties": {
+					"objectApiName": {
+						"value": "@dataset().object",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_salesforce_dev')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_sql_table')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_azuresql_dev",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"schema": {
+						"type": "string"
+					},
+					"table_name": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": {
+						"value": "@dataset().schema",
+						"type": "Expression"
+					},
+					"table": {
+						"value": "@dataset().table_name",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_azuresql_dev')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_src_blob_usage_bin')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_src_blob_usage",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"folder": {
+						"type": "string"
+					},
+					"file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().folder",
+							"type": "Expression"
+						},
+						"container": "src-blob-usage"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_src_blob_usage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adls_landing')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adls_landing_properties_typeProperties_url')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_azuresql_dev')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('ls_azuresql_dev_properties_typeProperties_server')]",
+					"database": "[parameters('ls_azuresql_dev_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SystemAssignedManagedIdentity"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_databricks_dev')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureDatabricks",
+				"typeProperties": {
+					"domain": "https://adb-7405611900530243.3.azuredatabricks.net",
+					"authentication": "MSI",
+					"workspaceResourceId": "/subscriptions/83d0be6b-8ce2-4b87-acb0-dabf5ea9b652/resourceGroups/rg-tfnsw-dev/providers/Microsoft.Databricks/workspaces/dbw-tfnsw-dev",
+					"newClusterNodeType": "Standard_DS3_v2",
+					"newClusterNumOfWorker": "1",
+					"newClusterSparkEnvVars": {
+						"PYSPARK_PYTHON": "/databricks/python3/bin/python3"
+					},
+					"newClusterVersion": "18.x-scala2.13",
+					"clusterOption": "Fixed",
+					"newClusterInitScripts": []
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_kv_salesforce')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('ls_kv_salesforce_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_salesforce_dev')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "SalesforceV2",
+				"typeProperties": {
+					"environmentUrl": "[parameters('ls_salesforce_dev_properties_typeProperties_environmentUrl')]",
+					"clientId": "[parameters('ls_salesforce_dev_properties_typeProperties_clientId')]",
+					"clientSecret": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_kv_salesforce",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "sf-client-secret",
+						"secretVersion": "9ce6170b5c17466fa1cc1373f36afd73"
+					},
+					"apiVersion": "67.0",
+					"authenticationType": "OAuth2ClientCredential"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_kv_salesforce')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_src_blob_usage')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"serviceEndpoint": "[parameters('ls_src_blob_usage_properties_typeProperties_serviceEndpoint')]",
+					"accountKind": "StorageV2"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/tr_daily_master')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "pl_master_ingest_and_transform",
+							"type": "PipelineReference"
+						},
+						"parameters": {
+							"run_date": "[parameters('tr_daily_master_properties_pl_master_ingest_and_transform_parameters_run_date')]"
+						}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2026-10-19T06:00:00",
+						"timeZone": "AUS Eastern Standard Time"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/pl_master_ingest_and_transform')]"
+			]
+		}
+	]
+}
