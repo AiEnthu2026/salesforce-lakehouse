@@ -3,14 +3,38 @@
 	"properties": {
 		"activities": [
 			{
+				"name": "set_run_date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rd",
+					"value": {
+						"value": "@if(empty(pipeline().parameters.run_date), convertFromUtc(utcnow(), 'AUS Eastern Standard Time', 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
 				"name": "Copy Account",
 				"description": "Copy Account Data from Salesforce",
 				"type": "Copy",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "set_run_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
+					"timeout": "0.01:00:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 60,
 					"secureOutput": false,
 					"secureInput": false
 				},
@@ -55,7 +79,10 @@
 						"referenceName": "ds_landing_parquet",
 						"type": "DatasetReference",
 						"parameters": {
-							"folder": "landing/salesforce/account/2026-09-29"
+							"folder": {
+								"value": "@concat('landing/salesforce/account/', variables('rd'))",
+								"type": "Expression"
+							}
 						}
 					}
 				]
@@ -64,11 +91,18 @@
 				"name": "Copy Contact",
 				"description": "Copy Contact data from Salesforce",
 				"type": "Copy",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "set_run_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
+					"timeout": "0.01:00:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 60,
 					"secureOutput": false,
 					"secureInput": false
 				},
@@ -113,7 +147,10 @@
 						"referenceName": "ds_landing_parquet",
 						"type": "DatasetReference",
 						"parameters": {
-							"folder": "landing/salesforce/contact/2026-09-29"
+							"folder": {
+								"value": "@concat('landing/salesforce/contact/', variables('rd'))",
+								"type": "Expression"
+							}
 						}
 					}
 				]
@@ -122,11 +159,18 @@
 				"name": "Copy Case",
 				"description": "Copy Case from Salesforce",
 				"type": "Copy",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "set_run_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
+					"timeout": "0.01:00:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 60,
 					"secureOutput": false,
 					"secureInput": false
 				},
@@ -171,12 +215,25 @@
 						"referenceName": "ds_landing_parquet",
 						"type": "DatasetReference",
 						"parameters": {
-							"folder": "landing/salesforce/case/2026-09-29"
+							"folder": {
+								"value": "@concat('landing/salesforce/case/', variables('rd'))",
+								"type": "Expression"
+							}
 						}
 					}
 				]
 			}
 		],
+		"parameters": {
+			"run_date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"rd": {
+				"type": "String"
+			}
+		},
 		"annotations": []
 	}
 }
