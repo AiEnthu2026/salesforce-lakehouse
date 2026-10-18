@@ -1,0 +1,17 @@
+{
+	"name": "tr_daily_master",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2026-10-19T06:00:00",
+				"timeZone": "AUS Eastern Standard Time"
+			}
+		}
+	}
+}
