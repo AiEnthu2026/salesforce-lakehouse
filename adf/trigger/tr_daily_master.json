@@ -10,7 +10,7 @@
 					"type": "PipelineReference"
 				},
 				"parameters": {
-					"run_date": "@formatDateTime(trigger().scheduledTime,'yyyy-MM-dd')"
+					"run_date": "@convertFromUtc(trigger().scheduledTime, 'AUS Eastern Standard Time', 'yyyy-MM-dd')"
 				}
 			}
 		],
