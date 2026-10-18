@@ -14,7 +14,7 @@
 				"typeProperties": {
 					"variableName": "rd",
 					"value": {
-						"value": "@if(empty(pipeline().parameters.run_date), formatDateTime(utcnow(), 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+						"value": "@if(empty(pipeline().parameters.run_date), convertFromUtc(utcnow(), 'AUS Eastern Standard Time', 'yyyy-MM-dd'), pipeline().parameters.run_date)",
 						"type": "Expression"
 					}
 				}
