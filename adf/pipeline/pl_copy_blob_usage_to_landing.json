@@ -3,9 +3,33 @@
 	"properties": {
 		"activities": [
 			{
+				"name": "set_run_date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rd",
+					"value": {
+						"value": "@if(empty(pipeline().parameters.run_date), formatDateTime(utcnow(), 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
 				"name": "copy_usage_to_landing",
 				"type": "Copy",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "set_run_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -40,7 +64,10 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"folder": "usage",
-							"file": "usage_20260929.csv"
+							"file": {
+								"value": "@concat('usage_', replace(variables('rd'), '-', ''), '.csv')",
+								"type": "Expression"
+							}
 						}
 					}
 				],
@@ -49,7 +76,10 @@
 						"referenceName": "ds_landing_bin",
 						"type": "DatasetReference",
 						"parameters": {
-							"folder": "landing/blob_usage/2026-09-29"
+							"folder": {
+								"value": "@concat('landing/blob_usage/', variables('rd'))",
+								"type": "Expression"
+							}
 						}
 					}
 				]
@@ -67,17 +97,6 @@
 		},
 		"annotations": [],
 		"lastPublishTime": "2026-09-29T06:42:35Z"
-	},
-	"parameters": {
-		"run_date": {
-			"type": "String",
-			"defaultValue": ""
-		}
-	},
-	"variables": {
-		"rd": {
-			"type": "String"
-		}
 	},
 	"type": "Microsoft.DataFactory/factories/pipelines"
 }
