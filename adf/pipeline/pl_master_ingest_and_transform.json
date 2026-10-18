@@ -1,0 +1,161 @@
+{
+	"name": "pl_master_ingest_and_transform",
+	"properties": {
+		"activities": [
+			{
+				"name": "set_run_date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "rd",
+					"value": {
+						"value": "@if(empty(pipeline().parameters.run_date), convertFromUtc(utcnow(), 'AUS Eastern Standard Time', 'yyyy-MM-dd'), pipeline().parameters.run_date)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "run_salesforce_copy",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "set_run_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_copy_salesforce_to_landing",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"run_date": {
+							"value": "@variables('rd')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "run_azuresql_copy",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "set_run_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_copy_azuresql_to_landing",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"run_date": {
+							"value": "@variables('rd')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "run_blob_usage_copy",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "set_run_date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_copy_blob_usage_to_landing",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"run_date": {
+							"value": "@variables('rd')",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "run_ldp_job",
+				"type": "DatabricksJob",
+				"dependsOn": [
+					{
+						"activity": "run_azuresql_copy",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "run_salesforce_copy",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "run_blob_usage_copy",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.02:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"jobId": "98487751207356"
+				},
+				"linkedServiceName": {
+					"referenceName": "ls_databricks_dev",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"run_date": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"rd": {
+				"type": "String"
+			}
+		},
+		"annotations": []
+	}
+}
