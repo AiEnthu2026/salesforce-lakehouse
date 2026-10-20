@@ -1,0 +1,11 @@
+resources:
+  jobs:
+    salesforce_ldp_job:
+      name: salesforce_ldp_job_${bundle.target}
+      tasks:
+        - task_key: run_ldp_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.salesforce_ldp_pipeline.id}
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
