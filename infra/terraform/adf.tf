@@ -34,3 +34,9 @@ resource "azurerm_role_assignment" "adf_landing_writer" {
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_data_factory.salesforce.identity[0].principal_id
 }
+
+resource "azurerm_role_assignment" "adf_databricks_contributor" {
+  scope                = data.azurerm_databricks_workspace.shared.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_data_factory.salesforce.identity[0].principal_id
+}
