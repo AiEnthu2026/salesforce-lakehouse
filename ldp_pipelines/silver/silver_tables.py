@@ -50,7 +50,9 @@ def define_silver(cfg: dict):
     flag = cfg["delete_flag"]
     extra = {}
     if cfg.get("schema"):
-                extra["schema"] = cfg["schema"].format(catalog=catalog)
+        extra["schema"] = cfg["schema"].format(catalog=catalog)
+    if cfg.get("row_filter"):
+        extra["row_filter"] = cfg["row_filter"].format(catalog=catalog)
     dp.create_streaming_table(
         name=target,
         comment=f"Cleaned, typed, deduplicated current state of {cfg['source']}",
