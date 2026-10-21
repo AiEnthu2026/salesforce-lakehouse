@@ -15,7 +15,8 @@ def test_registry_declares_the_expected_masks():
     declared = set(re.findall(r"(\w+)\s+\w+\s+MASK\b", CONTACT["schema"]))
     assert declared == EXPECTED_MASKED
 
-
+# information_schema, not SHOW FUNCTIONS: SHOW ... IN <catalog>.<schema> raises
+# CROSS_CATALOG_SCHEMA_REFERENCE_NOT_SUPPORTED over Spark Connect (serverless).
 def test_mask_functions_exist(spark, catalog):
     rows = spark.sql(
         f"""SELECT routine_name FROM {catalog}.information_schema.routines
