@@ -53,7 +53,7 @@ SILVER_TABLES = [
             "lead_source": "leadsource",
             "mailing_city": "mailingcity",
             "mailing_state": "mailingstate",
-            "mailing_country": "mailingcountry",
+            "mailing_country": "CASE WHEN upper(trim(mailingcountry)) IN ('US', 'USA', 'UNITED STATES') THEN 'United States' ELSE trim(mailingcountry) END",
             "birth_date": "CAST(birthdate AS DATE)",
             "owner_id": "ownerid",
             "created_at": "createddate",
@@ -69,6 +69,17 @@ SILVER_TABLES = [
             "last_name_present": "last_name IS NOT NULL",
             "email_format": "email IS NULL OR email RLIKE '^[^@ ]+@[^@ ]+[.][^@ ]+$'",
         },
+        "schema": """
+                    id STRING, account_id STRING,
+                    first_name STRING MASK {catalog}.silver.mask_text, last_name STRING MASK {catalog}.silver.mask_text,
+                    full_name STRING MASK {catalog}.silver.mask_text, email STRING MASK {catalog}.silver.mask_email,
+                    phone STRING MASK {catalog}.silver.mask_text, mobile_phone STRING MASK {catalog}.silver.mask_text,
+                    title STRING, department STRING, lead_source STRING,
+                    mailing_city STRING MASK {catalog}.silver.mask_text, mailing_state STRING, mailing_country STRING,
+                    birth_date DATE MASK {catalog}.silver.mask_date, owner_id STRING,
+                    created_at TIMESTAMP, modified_at TIMESTAMP, system_modstamp TIMESTAMP,
+                    ingested_at TIMESTAMP, source_file STRING
+                """,
     },
     {
         "name": "support_case",
