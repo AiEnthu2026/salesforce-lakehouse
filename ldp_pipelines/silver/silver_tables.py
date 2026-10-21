@@ -9,6 +9,7 @@ def define_silver(cfg: dict):
     name = cfg["name"]
     target = f"silver.{name}"
     valid_view = f"{name}_valid_v"
+    catalog = spark.conf.get("catalog_name")
 
     def standardised():
         df = spark.readStream.table(f"bronze.{cfg['source']}")
@@ -47,10 +48,14 @@ def define_silver(cfg: dict):
     )
 
     flag = cfg["delete_flag"]
+    extra = {}
+    if cfg.get("schema"):
+                extra["schema"] = cfg["schema"].format(catalog=catalog)
     dp.create_streaming_table(
         name=target,
         comment=f"Cleaned, typed, deduplicated current state of {cfg['source']}",
         table_properties={"quality": "silver"},
+        **extra
     )
     dp.create_auto_cdc_flow(
         target=target,
