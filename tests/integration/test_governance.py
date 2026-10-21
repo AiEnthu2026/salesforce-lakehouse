@@ -17,8 +17,11 @@ def test_registry_declares_the_expected_masks():
 
 
 def test_mask_functions_exist(spark, catalog):
-    rows = spark.sql(f"SHOW USER FUNCTIONS IN {catalog}.silver").collect()
-    names = {r[0].split(".")[-1] for r in rows}
+    rows = spark.sql(
+        f"""SELECT routine_name FROM {catalog}.information_schema.routines
+            WHERE routine_schema = 'silver'"""
+    ).collect()
+    names = {r["routine_name"] for r in rows}
     assert {"mask_text", "mask_email", "mask_date"} <= names
 
 
