@@ -13,6 +13,13 @@ resources:
             - task_key: create_governance_functions
           pipeline_task:
             pipeline_id: ${resources.pipelines.salesforce_ldp_pipeline.id}
+        - task_key: apply_governance_grants
+          depends_on:
+            - task_key: run_ldp_pipeline
+          notebook_task:
+            notebook_path: ../governance/02_grants.py
+            base_parameters:
+              catalog_name: ${var.catalog_name}
       email_notifications:
         on_failure:
           - ${var.notification_email}

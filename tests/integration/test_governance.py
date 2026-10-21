@@ -43,3 +43,14 @@ def test_mailing_country_is_normalised(spark, catalog):
             WHERE upper(trim(mailing_country)) IN ('US', 'USA')"""
     ).first()[0]
     assert bad == 0
+
+
+def test_contact_row_filter_is_attached(spark, catalog):
+    rows = spark.sql(
+        f"""SELECT filter_name, target_columns
+            FROM {catalog}.information_schema.row_filters
+            WHERE table_schema = 'silver' AND table_name = 'contact'"""
+    ).collect()
+    assert len(rows) == 1
+    assert rows[0]["filter_name"] == f"{catalog}.silver.region_filter"
+    assert rows[0]["target_columns"] == "mailing_country"
