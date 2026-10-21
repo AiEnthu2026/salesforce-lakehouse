@@ -32,5 +32,8 @@ jobs:
       - name: Deploy bundle to prod
         run: databricks bundle deploy -t prod
 
+      - name: Run pipeline job
+        run: databricks bundle run salesforce_ldp_job -t prod
+
       - name: Run e2e tests
         run: databricks bundle run salesforce_test_suite -t prod --params test_path=e2e

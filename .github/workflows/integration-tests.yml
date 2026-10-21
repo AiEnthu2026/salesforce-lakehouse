@@ -32,6 +32,9 @@ jobs:
       - name: Deploy bundle to staging
         run: databricks bundle deploy -t staging
 
+      - name: Run pipeline job
+        run: databricks bundle run salesforce_ldp_job -t staging
+
       - name: Run integration tests
         run: databricks bundle run salesforce_test_suite -t staging --params test_path=integration
 
