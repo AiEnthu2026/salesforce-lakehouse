@@ -3,7 +3,14 @@ resources:
     salesforce_ldp_job:
       name: salesforce_ldp_job_${bundle.target}
       tasks:
+        - task_key: create_governance_functions
+          notebook_task:
+            notebook_path: ../governance/01_mask_functions.py
+            base_parameters:
+              catalog_name: ${var.catalog_name}
         - task_key: run_ldp_pipeline
+          depends_on:
+            - task_key: create_governance_functions
           pipeline_task:
             pipeline_id: ${resources.pipelines.salesforce_ldp_pipeline.id}
       email_notifications:
