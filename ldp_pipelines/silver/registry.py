@@ -80,6 +80,7 @@ SILVER_TABLES = [
                     created_at TIMESTAMP, modified_at TIMESTAMP, system_modstamp TIMESTAMP,
                     ingested_at TIMESTAMP, source_file STRING
                 """,
+        "row_filter": "ROW FILTER {catalog}.silver.region_filter ON (mailing_country)",
     },
     {
         "name": "support_case",
