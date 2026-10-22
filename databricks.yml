@@ -18,6 +18,8 @@ variables:
       warehouse: "Serverless Starter Warehouse"
   notification_email:
     description: Email address alerted on pipeline failure
+  ado_sp_application_id:
+    description: Application ID of the Azure DevOps service principal allowed to run the staging test suite
 
 targets:
   dev:
@@ -35,6 +37,12 @@ targets:
     variables:
       catalog_name: salesforce_staging
       pipeline_dev_mode: false
+    resources:
+      jobs:
+        salesforce_test_suite:
+          permissions:
+            - service_principal_name: ${var.ado_sp_application_id}
+              level: CAN_MANAGE_RUN
   prod:
     workspace:
       host: https://adb-7405611900530243.3.azuredatabricks.net/
