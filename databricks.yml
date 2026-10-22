@@ -20,6 +20,7 @@ variables:
     description: Email address alerted on pipeline failure
   ado_sp_application_id:
     description: Application ID of the Azure DevOps service principal allowed to run the staging test suite
+    default: ""
 
 targets:
   dev:
