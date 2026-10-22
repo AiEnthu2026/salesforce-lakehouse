@@ -1,0 +1,55 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-24.04
+
+stages:
+  - stage: validate
+    displayName: Validate bundle
+    jobs:
+      - job: validate_bundle
+        steps:
+          - script: curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+            displayName: Install Databricks CLI
+
+          - task: AzureCLI@2
+            displayName: Validate bundle against staging
+            inputs:
+              azureSubscription: sc-azure-staging
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                export DATABRICKS_TOKEN=$(az account get-access-token \
+                  --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d \
+                  --query accessToken -o tsv)
+                databricks bundle validate -t staging
+            env:
+              BUNDLE_VAR_landing_base: $(LANDING_BASE)
+              BUNDLE_VAR_notification_email: $(NOTIFICATION_EMAIL)
+              BUNDLE_VAR_ado_sp_application_id: $(ADO_SP_APPLICATION_ID)
+  - stage: run_tests
+    displayName: Run staging test suite
+    dependsOn: validate
+    jobs:
+      - deployment: staging_release_validation
+        environment: staging-release
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+                  displayName: Install Databricks CLI
+
+                - task: AzureCLI@2
+                  displayName: Run the staging test suite
+                  inputs:
+                    azureSubscription: sc-azure-staging
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      export DATABRICKS_HOST="https://adb-7405611900530243.3.azuredatabricks.net"
+                      export DATABRICKS_TOKEN=$(az account get-access-token \
+                        --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d \
+                        --query accessToken -o tsv)
+                      # STAGING_TEST_JOB_ID is a plain pipeline variable on purpose: as a secret it did not expand correctly here.
+                      databricks jobs run-now --json '{"job_id": $(STAGING_TEST_JOB_ID), "job_parameters": {"test_path": "integration"}}'

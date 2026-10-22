@@ -22,6 +22,7 @@ jobs:
       BUNDLE_VAR_catalog_name: ${{ vars.CATALOG_NAME }}
       BUNDLE_VAR_landing_base: ${{ secrets.LANDING_BASE }}
       BUNDLE_VAR_notification_email: ${{ secrets.NOTIFICATION_EMAIL }}
+      BUNDLE_VAR_ado_sp_application_id: ${{ secrets.ADO_SP_APPLICATION_ID }}
 
     steps:
       - uses: actions/checkout@v4
