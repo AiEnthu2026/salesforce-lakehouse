@@ -6,7 +6,7 @@ A multi-source customer 360 lakehouse on Azure and Databricks. Azure Data Factor
 
 ## What it does
 
-- **Three sources, one landing zone:** ADF copies Salesforce Account, Contact and Case objects, a usage CSV from Blob Storage, and an `account_contracts` table from Azure SQL into the landing container.
+- **Three sources, one landing zone:** ADF copies Salesforce Account, Contact and Case objects, a usage CSV from Blob Storage, and an `account_contracts` table from Azure SQL into the landing container. A master pipeline then triggers the Databricks job once all the copies finish.
 - **Medallion layers:** Bronze ingests the landed files with Auto Loader. Silver applies per-entity quality rules, sends failing rows to quarantine tables, and keeps current state with auto CDC (SCD Type 1). Gold builds dimensions, facts and aggregates. Bronze and Silver tables are defined from registries (`registry.py`), so adding an entity is a registry entry.
 - **Contract enrichment:** Azure SQL contract data adds a `contract_tier` to the account dimension and feeds a separate committed-versus-actual usage table.
 - **Dashboard:** a Databricks AI/BI dashboard, deployed through DABs and parameterised per environment.
@@ -19,7 +19,9 @@ flowchart LR
   B[Azure Blob<br/>usage CSV] --> D
   C[Azure SQL<br/>account_contracts] --> D
   D --> E[(ADLS Gen2 landing)]
+  D -. triggers .-> K[Databricks job]
   E --> F[LDP Bronze] --> G[LDP Silver] --> H[LDP Gold]
+  K -. runs .-> F  
   H --> I[AI/BI dashboard]
   H --> J[dbt staging, intermediate and marts]
 ```
@@ -56,7 +58,7 @@ Work moves `develop` → `staging` → `main`. The bundle has `dev`, `staging` a
 | Event | Gate | What runs |
 |---|---|---|
 | Push to `develop` | Unit tests | Transform and registry tests |
-| Pull request into `staging` | Integration test and `dbt-build` | Gold row counts and revenue totals reconcile with Silver; `dbt build` runs the models, seed, snapshot and 50 data tests in an isolated schema |
+| Pull request into `staging` | Integration test and `dbt-build` | Gold row counts and revenue totals reconcile with Silver; `dbt build` runs the models, seed, snapshot, 58 data tests and 1 unit test in an isolated schema |
 | Pull request into `main` | End-to-end test | The Gold tables behind the dashboard's headline numbers match known values (300 accounts, 600 cases, 3,721,662.94 revenue) |
 
 Rulesets (exported in `.github/rulesets/`) require pull requests, merge commits only and the integration and `dbt-build` checks on `staging` and the e2e check on `main`, with no bypass actors. Direct pushes to those branches are rejected, including for the owner. `develop` only blocks deletion and force-pushes, because ADF Studio commits to it directly.
@@ -84,7 +86,7 @@ The dashboard shows revenue, cases opened and escalated, and account counts, wit
 
 ## dbt layer
 
-A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, an intermediate model, two marts, reusable macros and a demo snapshot. It has 10 models and 50 tests, runs as its own least-privilege service principal that can read Gold and write only to its own schema (Gold write denial tested), and has one documented warning(see Trade-offs and known gaps). See [sf_dbt/README.md](sf_dbt/README.md).
+A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, intermediate models (including an incremental usage model), two marts with enforced contracts, reusable macros, a demo snapshot and a dashboard exposure. It has 11 models, 58 data tests and 1 unit test, descriptions are persisted to Unity Catalog, and it runs as its own least-privilege service principal that can read Gold and write only to its own schema (Gold write denial tested). It has one documented warning (see Trade-offs and known gaps). See [sf_dbt/README.md](sf_dbt/README.md).
 
 ![dbt lineage](docs/dbt/lineage-graph.png)
 
@@ -113,10 +115,9 @@ A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, a
 **Known gaps**
 - The Network Security Perimeter is in learning mode, and the Key Vault, the dbt service principal's grants and its schemas were created by hand, not in Terraform.
 - Contracts are SCD Type 1 in the pipeline. SCD Type 2 is shown only on demo data (four manual scenarios, not in CI), and incremental loads of changed contracts are untested.
-- ADF copies to landing, but triggering the Databricks pipeline from ADF is planned.
 - Revenue band is `Unknown` for every account because the generator sets no annual revenue.
-- 13 Developer Edition sample accounts fail the `customer_ref` rule and sit in quarantine. 20 contacts reference 12 of them, so `dim_contact` keeps their raw account ID while the fact tables map them to UNKNOWN. `sf_dbt` flags and maps them, and the pipeline fix is planned.
-- Twenty-six cases also map to UNKNOWN, probably from the same sample records, not yet confirmed.
+- 13 Developer Edition sample accounts fail the `customer_ref` rule and sit in quarantine. 20 contacts reference 12 of them, so `dim_contact` keeps their raw account ID while the fact tables map them to UNKNOWN. `sf_dbt` flags and maps them (its relationships test warns on the 20 orphan contacts), and the pipeline fix is planned.
+- 26 cases also map to UNKNOWN, probably from the same sample records, not yet confirmed.
 
 ## Data and trademarks
 
