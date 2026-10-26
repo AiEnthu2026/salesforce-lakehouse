@@ -1,0 +1,15 @@
+version: 2
+
+exposures:
+  - name: customer_360_overview
+    label: Customer 360 Overview
+    type: dashboard
+    maturity: medium
+    description: Databricks AI/BI dashboard on the Gold layer, deployed through Asset Bundles. It reads Gold directly, not the dbt marts.
+    owner:
+      name: Shakeel
+    depends_on:
+      - source('gold', 'agg_account_monthly')
+      - source('gold', 'dim_date')
+      - source('gold', 'fact_case')
+      - source('gold', 'fact_usage')
