@@ -24,3 +24,4 @@ models:
 vars:
   util_under_pct: 80
   util_over_pct: 120
+  usage_lookback_days: 3
