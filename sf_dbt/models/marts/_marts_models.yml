@@ -2,72 +2,151 @@ version: 2
 
 models:
   - name: mart_account_monthly_health
+    config:
+      contract:
+        enforced: true
     description: One row per account and month, with contract utilisation, escalation rate and usage trend. Driven by the monthly aggregate, with the contract table left joined. Months with no usage and no contract row are labelled no_usage, and accounts with usage but no commitment are labelled no_commitment. Month-over-month change is null when the previous month is missing. The UNKNOWN account is a catch-all for orphaned cases, and its status is not a customer health measure. Thresholds for commit_status are the util_under_pct and util_over_pct project variables.
     columns:
-      - name: utilisation_pct
-        description: usage as a % of the monthly commitment.
-      - name: variance_aud
-        description: usage minus commitment, in AUD.
-      - name: escalation_rate
-        description: escalated cases divided by cases opened, null when none
-      - name: usage_mom_change_pct
-        description: change on the previous month, null if that month is missing.
-      - name: usage_avg_3m_aud
-        description: average over this and the two previous months.
-      - name: committed_monthly_aud
-        description: usage committed monthly, in AUD.
       - name: account_month_key
+        data_type: string
         description: Built key, account_id and month_start joined with a pipe.
         data_tests:
           - unique
           - not_null
+      - name: account_id
+        data_type: string
       - name: is_unknown_account
+        data_type: boolean
         description: True for the UNKNOWN catch-all account, which holds cases that could not be matched to an account.
         data_tests:
           - not_null
+      - name: month_start
+        data_type: date
+      - name: account_name
+        data_type: string
+      - name: industry
+        data_type: string
+      - name: rating
+        data_type: string
+      - name: revenue_band
+        data_type: string
+      - name: contract_id
+        data_type: string
+      - name: contract_tier
+        data_type: string
+      - name: committed_monthly_aud
+        data_type: decimal(12,2)
+        description: usage committed monthly, in AUD.
+      - name: utilisation_pct
+        data_type: decimal(28,1)
+        description: usage as a % of the monthly commitment.
+      - name: variance_aud
+        data_type: decimal(23,2)
+        description: usage minus commitment, in AUD.
       - name: commit_status
+        data_type: string
         description: Utilisation band against the commitment, or no_usage and no_commitment where there is nothing to compare.
         data_tests:
           - not_null
           - accepted_values:
               arguments:
                 values: ['no_usage', 'no_commitment', 'under', 'on_track', 'over']
+      - name: cases_opened
+        data_type: bigint
+      - name: cases_escalated
+        data_type: bigint
+      - name: escalation_rate
+        data_type: decimal(38,16)
+        description: escalated cases divided by cases opened, null when none
+      - name: usage_events
+        data_type: bigint
+      - name: usage_amount_aud
+        data_type: decimal(22,2)
+      - name: usage_avg_3m_aud
+        data_type: decimal(26,6)
+        description: average over this and the two previous months.
+      - name: prev_month_usage_aud
+        data_type: decimal(22,2)
+      - name: usage_mom_change_pct
+        data_type: decimal(38,9)
+        description: usage change on the previous month, null if that month is missing.
 
   - name: mart_account_360
+    config:
+      contract:
+        enforced: true
     description: One row per account, built from dim_account. Contacts, cases and usage are aggregated to account grain before joining, so the joins cannot fan out. The UNKNOWN account is a catch-all for orphaned cases and contacts. latest_commit_status comes from mart_account_monthly_health and is null for accounts with no monthly row.
     columns:
       - name: account_id
+        data_type: string
         description: Account identifier, the key of the mart.
         data_tests:
           - unique
           - not_null
       - name: is_unknown_account
+        data_type: boolean
         description: True for the UNKNOWN catch-all account.
         data_tests:
           - not_null
+      - name: account_name
+        data_type: string
+      - name: account_type
+        data_type: string
+      - name: industry
+        data_type: string
+      - name: billing_state
+        data_type: string
+      - name: billing_country
+        data_type: string
+      - name: rating
+        data_type: string
+      - name: revenue_band
+        data_type: string
+      - name: contract_tier
+        data_type: string
+      - name: created_at
+        data_type: timestamp
       - name: contact_count
-        description: Number of contacts
+        data_type: bigint
+        description: Number of contacts.
         data_tests:
           - not_null
       - name: cases_total
-        description: Total number of cases
-        data_tests:
-          - not_null
-      - name: lifetime_usage_aud
-        description: Sum of usage amounts across all months, reconciled to fact_usage.
+        data_type: bigint
+        description: Total number of cases.
         data_tests:
           - not_null
       - name: cases_open
+        data_type: bigint
         description: Total number of open cases.
         data_tests:
           - not_null
+      - name: cases_closed
+        data_type: bigint
+      - name: cases_escalated
+        data_type: bigint
       - name: cases_high_priority
+        data_type: bigint
         description: Total number of high priority cases.
         data_tests:
           - not_null
+      - name: avg_hours_to_close
+        data_type: double
+        description: average hours to close. These are only for closed cases.
+      - name: lifetime_usage_events
+        data_type: bigint
+      - name: lifetime_usage_units
+        data_type: bigint
+      - name: lifetime_usage_aud
+        data_type: decimal(22,2)
+        description: Sum of usage amounts across all months, reconciled to fact_usage.
+        data_tests:
+          - not_null
+      - name: latest_month_start
+        data_type: date
       - name: latest_commit_status
+        data_type: string
         description: Status of the latest commit.
       - name: latest_utilisation_pct
+        data_type: decimal(28,1)
         description: latest usage as a % of the commitment.
-      - name: avg_hours_to_close
-        description: average hours to close. These are only for closed cases.
