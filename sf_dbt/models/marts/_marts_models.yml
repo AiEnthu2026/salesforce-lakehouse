@@ -4,6 +4,18 @@ models:
   - name: mart_account_monthly_health
     description: One row per account and month, with contract utilisation, escalation rate and usage trend. Driven by the monthly aggregate, with the contract table left joined. Months with no usage and no contract row are labelled no_usage, and accounts with usage but no commitment are labelled no_commitment. Month-over-month change is null when the previous month is missing. The UNKNOWN account is a catch-all for orphaned cases, and its status is not a customer health measure. Thresholds for commit_status are the util_under_pct and util_over_pct project variables.
     columns:
+      - name: utilisation_pct
+        description: usage as a % of the monthly commitment.
+      - name: variance_aud
+        description: usage minus commitment, in AUD.
+      - name: escalation_rate
+        description: escalated cases divided by cases opened, null when none
+      - name: usage_mom_change_pct
+        description: change on the previous month, null if that month is missing.
+      - name: usage_avg_3m_aud
+        description: average over this and the two previous months.
+      - name: committed_monthly_aud
+        description: usage committed monthly, in AUD.
       - name: account_month_key
         description: Built key, account_id and month_start joined with a pipe.
         data_tests:
@@ -34,12 +46,28 @@ models:
         data_tests:
           - not_null
       - name: contact_count
+        description: Number of contacts
         data_tests:
           - not_null
       - name: cases_total
+        description: Total number of cases
         data_tests:
           - not_null
       - name: lifetime_usage_aud
         description: Sum of usage amounts across all months, reconciled to fact_usage.
         data_tests:
           - not_null
+      - name: cases_open
+        description: Total number of open cases.
+        data_tests:
+          - not_null
+      - name: cases_high_priority
+        description: Total number of high priority cases.
+        data_tests:
+          - not_null
+      - name: latest_commit_status
+        description: Status of the latest commit.
+      - name: latest_utilisation_pct
+        description: latest usage as a % of the commitment.
+      - name: avg_hours_to_close
+        description: average hours to close. These are only for closed cases.
