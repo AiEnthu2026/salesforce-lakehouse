@@ -17,3 +17,21 @@ models:
       - name: is_orphan_account
         data_tests:
           - not_null
+  
+  - name: int_usage_daily
+    description: One row per usage date, account and service. Incremental (merge on usage_day_key) with a lookback window set by the usage_lookback_days project variable.
+    columns:
+      - name: usage_day_key
+        description: Built key, usage_date, account_id and service joined with a pipe.
+        data_tests:
+          - unique
+          - not_null
+      - name: usage_date
+        data_tests:
+          - not_null
+      - name: account_id
+        data_tests:
+          - not_null
+      - name: service
+        data_tests:
+          - not_null

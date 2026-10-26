@@ -1,0 +1,30 @@
+unit_tests:
+  - name: test_commit_status_bands
+    model: mart_account_monthly_health
+    overrides:
+      vars:
+        util_under_pct: 80
+        util_over_pct: 120
+    given:
+      - input: ref('stg_gold__agg_account_monthly')
+        rows:
+          - {account_month_key: 'A|2026-01-01', account_id: 'A', month_start: '2026-01-01', usage_events: 5}
+          - {account_month_key: 'B|2026-01-01', account_id: 'B', month_start: '2026-01-01', usage_events: 5}
+          - {account_month_key: 'C|2026-01-01', account_id: 'C', month_start: '2026-01-01', usage_events: 5}
+          - {account_month_key: 'D|2026-01-01', account_id: 'D', month_start: '2026-01-01', usage_events: 5}
+          - {account_month_key: 'E|2026-01-01', account_id: 'E', month_start: '2026-01-01', usage_events: 0}
+          - {account_month_key: 'F|2026-01-01', account_id: 'F', month_start: '2026-01-01', usage_events: 5}
+      - input: ref('stg_gold__agg_contract_vs_usage')
+        rows:
+          - {account_month_key: 'A|2026-01-01', committed_monthly_aud: 1000, utilisation_pct: 79.9}
+          - {account_month_key: 'B|2026-01-01', committed_monthly_aud: 1000, utilisation_pct: 80.0}
+          - {account_month_key: 'C|2026-01-01', committed_monthly_aud: 1000, utilisation_pct: 120.0}
+          - {account_month_key: 'D|2026-01-01', committed_monthly_aud: 1000, utilisation_pct: 120.1}
+    expect:
+      rows:
+        - {account_month_key: 'A|2026-01-01', commit_status: 'under'}
+        - {account_month_key: 'B|2026-01-01', commit_status: 'on_track'}
+        - {account_month_key: 'C|2026-01-01', commit_status: 'on_track'}
+        - {account_month_key: 'D|2026-01-01', commit_status: 'over'}
+        - {account_month_key: 'E|2026-01-01', commit_status: 'no_usage'}
+        - {account_month_key: 'F|2026-01-01', commit_status: 'no_commitment'}
