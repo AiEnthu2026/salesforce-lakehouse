@@ -68,7 +68,11 @@ jobs:
         run: |
           host="${RAW_HOST#https://}"
           echo "DBT_DATABRICKS_HOST=${host%/}" >> "$GITHUB_ENV"
-
+      
+      - name: Install dbt packages
+        working-directory: sf_dbt
+        run: dbt deps
+      
       - name: Clean schema (pre)
         working-directory: sf_dbt
         run: dbt run-operation clean_target_schema --profiles-dir ci --target staging
