@@ -50,6 +50,7 @@ All data is synthetic. A seeded generator in `data_generator/` creates the Sales
 | `governance/` | Mask and row-filter functions, and the grants applied after each pipeline run |
 | `azure-pipelines.yml` | Manual release check with an approval gate (Azure DevOps) |
 | `tests/manual/` | Per-group access check, run by hand |
+| `genie_agent/` | a Databricks Genie agent over the dbt marts, with business-rule instructions and a 10-question SQL-graded benchmark. See `genie_agent/README.md` |
 
 ## Environments and promotion gates
 
