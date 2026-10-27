@@ -6,6 +6,10 @@ models:
       contract:
         enforced: true
     description: One row per account and month, with contract utilisation, escalation rate and usage trend. Driven by the monthly aggregate, with the contract table left joined. Months with no usage and no contract row are labelled no_usage, and accounts with usage but no commitment are labelled no_commitment. Month-over-month change is null when the previous month is missing. The UNKNOWN account is a catch-all for orphaned cases, and its status is not a customer health measure. Thresholds for commit_status are the util_under_pct and util_over_pct project variables.
+    data_tests:
+      - dbt_expectations.expect_table_row_count_to_equal_other_table:
+          arguments:
+            compare_model: ref('stg_gold__agg_account_monthly')    
     columns:
       - name: account_month_key
         data_type: string
@@ -40,6 +44,10 @@ models:
       - name: utilisation_pct
         data_type: decimal(28,1)
         description: usage as a % of the monthly commitment.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
       - name: variance_aud
         data_type: decimal(23,2)
         description: usage minus commitment, in AUD.
@@ -58,6 +66,11 @@ models:
       - name: escalation_rate
         data_type: decimal(38,16)
         description: escalated cases divided by cases opened, null when none
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
       - name: usage_events
         data_type: bigint
       - name: usage_amount_aud
