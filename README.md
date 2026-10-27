@@ -58,7 +58,7 @@ Work moves `develop` → `staging` → `main`. The bundle has `dev`, `staging` a
 | Event | Gate | What runs |
 |---|---|---|
 | Push to `develop` | Unit tests | Transform and registry tests |
-| Pull request into `staging` | Integration test and `dbt-build` | Gold row counts and revenue totals reconcile with Silver; `dbt build` runs the models, seed, snapshot, 58 data tests and 1 unit test in an isolated schema |
+| Pull request into `staging` | Integration test and `dbt-build` | Gold row counts and revenue totals reconcile with Silver; `dbt build` runs the models, seed, snapshot, 60 data tests and 1 unit test in an isolated schema |
 | Pull request into `main` | End-to-end test | The Gold tables behind the dashboard's headline numbers match known values (300 accounts, 600 cases, 3,721,662.94 revenue) |
 
 Rulesets (exported in `.github/rulesets/`) require pull requests, merge commits only and the integration and `dbt-build` checks on `staging` and the e2e check on `main`, with no bypass actors. Direct pushes to those branches are rejected, including for the owner. `develop` only blocks deletion and force-pushes, because ADF Studio commits to it directly.
@@ -86,7 +86,7 @@ The dashboard shows revenue, cases opened and escalated, and account counts, wit
 
 ## dbt layer
 
-A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, intermediate models (including an incremental usage model), two marts with enforced contracts, reusable macros, a demo snapshot and a dashboard exposure. It has 11 models, 58 data tests and 1 unit test, descriptions are persisted to Unity Catalog, and it runs as its own least-privilege service principal that can read Gold and write only to its own schema (Gold write denial tested). It has one documented warning (see Trade-offs and known gaps). See [sf_dbt/README.md](sf_dbt/README.md).
+A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, intermediate models (including an incremental usage model), two marts with enforced contracts, reusable macros, a demo snapshot and a dashboard exposure. It has 11 models, 60 data tests and 1 unit test, descriptions are persisted to Unity Catalog, and it runs as its own least-privilege service principal that can read Gold and write only to its own schema (Gold write denial tested). It has one documented warning (see Trade-offs and known gaps). See [sf_dbt/README.md](sf_dbt/README.md).
 
 ![dbt lineage](docs/dbt/lineage-graph.png)
 

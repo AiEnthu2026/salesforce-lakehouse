@@ -7,7 +7,7 @@ A dbt Core project over the Gold layer of this repository. It reads the seven Go
 *Lineage with tests hidden: 7 Gold sources feed 7 staging views, then two intermediate models and two marts. The dashboard exposure (orange) reads Gold directly. The seed and snapshot at the top are a separate demo on controlled data.*
 
 ## Status
-The dbt layer is complete: staging, intermediate models (one of them an incremental model), a unit test, enforced contracts, two marts, reusable macros, a demo snapshot, logic tests and SCD2 scenario checks.
+The dbt layer covers staging, intermediate models (one incremental), two marts, reusable macros, enforced contracts, a demo snapshot, unit and logic tests, and SCD2 scenario checks. Packages (`dbt_utils`, `dbt_expectations`) are pinned in `package-lock.yml`.
 
 ## What is in it
 - 7 sources (the Gold tables) and 7 staging views
@@ -16,8 +16,8 @@ The dbt layer is complete: staging, intermediate models (one of them an incremen
 - 1 exposure documenting the Customer 360 dashboard (it reads Gold directly)
 - Macros: `safe_divide` (with a logic test), `write_probe` and `drop_probe` for permission tests, and four CI macros: `guard_ci_target`, `list_schema_relations`, `clean_target_schema` and `assert_schema_empty`
 - 1 seed and 1 snapshot (SCD Type 2), demonstrated on controlled demo data because the Gold data does not change; four manual scenarios check its history, see [scenarios/scd2](scenarios/scd2/README.md)
-- 58 data tests and 1 unit test
-- Last full run: 71 passed, 1 warning, 0 errors (11 models, 58 data tests, 1 unit test, 1 seed, 1 snapshot), also run on every pull request into staging.
+- 60 data tests and 1 unit test
+- Last full run: 73 passed, 1 warning, 0 errors (11 models, 60 data tests, 1 unit test, 1 seed, 1 snapshot, 7 sources, 1 exposure), also run on every pull request into staging.
 
 ## Identity and access
 dbt runs as its own Databricks service principal, not as a person and not with the shared token. It can read the Gold schema and can create and write tables in its own schemas (`dbt_dev` and `dbt_staging`). No credentials are stored in this repository.
