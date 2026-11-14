@@ -128,6 +128,8 @@ A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, i
 - **No secrets in git.** Salesforce is reached through an External Client App using the client credentials flow, and the client secret lives in Key Vault. Azure SQL is reached with Entra tokens and a managed identity user, with no passwords.
 - **Current contract, one row per account.** Silver contracts are SCD Type 1 keyed on contract, and Gold selects each account's current contract with `ROW_NUMBER`. A separate Gold table holds committed-versus-actual usage, so the validated headline numbers stay stable.
 
+- **Iceberg compatibility (UniForm).** gold.dim_account publishes Iceberg metadata over the same Parquet files, so Iceberg clients can read it without a copy. Pipeline materialized views need external metadata enabled (pipelines.externalMetadata.enabled, Public Preview) along with IcebergCompatV3, column mapping and row tracking. Enabling it on the existing table needed a drop and rebuild, and a one-time REPAIR TABLE … SYNC METADATA to generate the first metadata; later refreshes update it automatically.
+
 ## Engineering notes
 
 1. **A join fan-out inflated the numbers.** Five accounts have two contract rows after a renewal. A naive join took `dim_account` from 301 rows to 306 and revenue from 3,721,662.94 to 3,771,008.68, and the e2e test failed. Selecting the current contract per account restored 301 rows and the original revenue. A one-row-per-account test now guards the grain.
