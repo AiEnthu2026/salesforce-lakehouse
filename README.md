@@ -59,11 +59,11 @@ Work moves `develop` → `staging` → `main`. The bundle has `dev`, `staging` a
 
 | Event | Gate | What runs |
 |---|---|---|
-| Push to `develop` | Unit tests | Transform and registry tests |
-| Pull request into `staging` | Integration test and `dbt-build` | Gold row counts and revenue totals reconcile with Silver; `dbt build` runs the models, seed, snapshot, 60 data tests and 1 unit test in an isolated schema |
+| Push to `develop` | Unit tests (dev) | Transform and registry tests |
+| Pull request into `staging` | Unit tests, integration test and `dbt-build`, in order | Unit tests run in staging first, so a failure stops the run before the pipeline; Gold row counts and revenue totals reconcile with Silver; `dbt build` runs the models, seed, snapshot, 60 data tests and 1 unit test in an isolated schema |
 | Pull request into `main` | End-to-end test | The Gold tables behind the dashboard's headline numbers match known values (300 accounts, 600 cases, 3,721,662.94 revenue) |
 
-Rulesets (exported in `.github/rulesets/`) require pull requests, merge commits only and the integration and `dbt-build` checks on `staging` and the e2e check on `main`, with no bypass actors. Direct pushes to those branches are rejected, including for the owner. `develop` only blocks deletion and force-pushes, because ADF Studio commits to it directly.
+Rulesets (exported in `.github/rulesets/`) require pull requests, merge commits only, an up-to-date branch and the `unit-tests-staging`, integration and `dbt-build` checks on `staging`, and the e2e check on `main`, with no bypass actors. Direct pushes to those branches are rejected, including for the owner. `develop` only blocks deletion and force-pushes, because ADF Studio commits to it directly.
 
 **Azure DevOps release check.** `azure-pipelines.yml` is a manually triggered pipeline: it validates the bundle against staging, waits for an approval on the `staging-release` environment, then runs the staging test suite. It authenticates with an Entra token from a service connection, and the pipeline's service principal has `CAN_MANAGE_RUN` on the staging test job only.
 
@@ -136,6 +136,7 @@ A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, i
 1. **A join fan-out inflated the numbers.** Five accounts have two contract rows after a renewal. A naive join took `dim_account` from 301 rows to 306 and revenue from 3,721,662.94 to 3,771,008.68, and the e2e test failed. Selecting the current contract per account restored 301 rows and the original revenue. A one-row-per-account test now guards the grain.
 2. **A serverless SQL warehouse cost spike.** A Small warehouse with a 10-minute auto-stop left an idle tail that drove up cost. It is now 2X-Small with a 5-minute auto-stop.
 3. **A gate that must be able to fail.** To prove the dbt check blocks bad changes, a deliberately broken test was pushed on a throwaway branch (PR #17): the check went red, the merge was blocked, and cleanup still ran. The PR was closed without merging.
+4. **Skipping CI blocks the merge.** A pull request whose latest commit carried `[skip ci]` ran no workflows, so its required checks never reported and the merge stayed blocked. Environments that PR runs deploy to allow `refs/pull/*/merge`, because pull request runs use the merge ref rather than the source branch.
 
 ## Trade-offs and known gaps
 
