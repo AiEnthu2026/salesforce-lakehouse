@@ -85,6 +85,35 @@ Column masks and a row filter protect `silver.contact`, defined as SQL functions
 
 The dashboard shows revenue, cases opened and escalated, and account counts, with usage revenue by month and service, cases by priority and status, and usage by industry. Full PDF: [`Customer 360 Overview.pdf`](docs/dashboards/Customer%20360%20Overview.pdf)
 
+## Gold data model
+
+```mermaid
+flowchart LR
+  DA[dim_account<br/>one row per account<br/>incl. UNKNOWN]
+  DC[dim_contact<br/>one row per contact<br/>non-PII]
+  DD[dim_date<br/>one row per day<br/>date_key yyyyMMdd]
+  FC[fact_case<br/>one row per case]
+  FU[fact_usage<br/>one row per usage event]
+  AM[agg_account_monthly<br/>one row per account and month]
+  AC[agg_contract_vs_usage<br/>one row per account and month with usage]
+  SC[(silver.account_contract)]
+
+  DA -- account_id --> FC
+  DC -- contact_id --> FC
+  DD -- created_date_key --> FC
+  DD -- closed_date_key --> FC
+  DA -- account_id via customer_ref --> FU
+  DD -- date_key --> FU
+  DA -. raw account_id .-> DC
+  SC -. current contract tier .-> DA
+  FC --> AM
+  FU --> AM
+  FU --> AC
+  SC -. current contract .-> AC
+```
+
+*Two facts and three dimensions. dim_date plays two roles in fact_case (created and closed). Usage resolves its account through customer_ref; unmatched facts map to the UNKNOWN account and are flagged. The dotted link from dim_account to dim_contact means contacts keep their raw account ID and may reference quarantined accounts. Both aggregates roll up to month through dim_date.month_start.*
+
 ## dbt layer
 
 A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, intermediate models (including an incremental usage model), two marts with enforced contracts, reusable macros, a demo snapshot and a dashboard exposure. It has 11 models, 60 data tests and 1 unit test, descriptions are persisted to Unity Catalog, and it runs as its own least-privilege service principal that can read Gold and write only to its own schema (Gold write denial tested). It has one documented warning (see Trade-offs and known gaps). See [sf_dbt/README.md](sf_dbt/README.md).
@@ -116,6 +145,7 @@ A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, i
 **Known gaps**
 - The Network Security Perimeter is in learning mode, and the Key Vault, the dbt service principal's grants and its schemas were created by hand, not in Terraform.
 - Contracts are SCD Type 1 in the pipeline. SCD Type 2 is shown only on demo data (four manual scenarios, not in CI), and incremental loads of changed contracts are untested.
+- `agg_contract_vs_usage` compares every usage month with the account's current contract, not the contract in force that month. A point-in-time comparison needs contract history (SCD Type 2) and a join on `month_start` between `contract_start` and `contract_end`.
 - Revenue band is `Unknown` for every account because the generator sets no annual revenue.
 - 13 Developer Edition sample accounts fail the `customer_ref` rule and sit in quarantine. 20 contacts reference 12 of them, so `dim_contact` keeps their raw account ID while the fact tables map them to UNKNOWN. `sf_dbt` flags and maps them (its relationships test warns on the 20 orphan contacts), and the pipeline fix is planned.
 - 26 cases also map to UNKNOWN, probably from the same sample records, not yet confirmed.
