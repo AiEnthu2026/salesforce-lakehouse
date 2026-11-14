@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  unit-tests:
+  unit-tests-staging:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: staging
@@ -33,7 +33,7 @@ jobs:
         run: databricks bundle run salesforce_test_suite -t staging --params test_path=unit
 
   integration-tests:
-    needs: unit-tests
+    needs: unit-tests-staging
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: staging
