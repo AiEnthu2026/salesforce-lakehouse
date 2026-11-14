@@ -6,7 +6,15 @@ from utils.gold_transforms import add_contract_tier, add_revenue_band
 @dp.materialized_view(
     name="gold.dim_account",
     comment="One row per account (current state), plus an UNKNOWN member for orphaned facts",
-    table_properties={"quality": "gold"},
+    table_properties={
+        "quality": "gold",
+        "pipelines.externalMetadata.enabled": "true",
+        "delta.columnMapping.mode": "name",
+        "delta.enableRowTracking": "true",
+        "delta.enableDeletionVectors": "false",
+        "delta.enableIcebergCompatV3": "true",
+        "delta.universalFormat.enabledFormats": "iceberg",
+    },
 )
 @dp.expect_all_or_fail({"account_id_present": "account_id IS NOT NULL"})
 def dim_account():
