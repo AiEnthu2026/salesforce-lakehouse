@@ -7,7 +7,7 @@ A multi-source customer 360 lakehouse on Azure and Databricks. Azure Data Factor
 ## What it does
 
 - **Three sources, one landing zone:** ADF copies Salesforce Account, Contact and Case objects, a usage CSV from Blob Storage, and an `account_contracts` table from Azure SQL into the landing container. A master pipeline then triggers the Databricks job once all the copies finish.
-- **Medallion layers:** Bronze ingests the landed files with Auto Loader. Silver applies per-entity quality rules, sends failing rows to quarantine tables, and keeps current state with auto CDC (SCD Type 1). Gold builds dimensions, facts and aggregates. Bronze and Silver tables are defined from registries (`registry.py`), so adding an entity is a registry entry.
+- **Medallion layers:** Bronze ingests the landed files with Auto Loader. Silver applies per-entity quality rules, sends failing rows to quarantine tables, and keeps current state with auto CDC (SCD Type 1). Gold builds dimensions, facts and aggregates. Bronze and Silver tables are defined from registries (`registry.py`), so adding an entity is a registry entry. `gold.dim_account` is also readable by Iceberg clients (UniForm).
 - **Contract enrichment:** Azure SQL contract data adds a `contract_tier` to the account dimension and feeds a separate committed-versus-actual usage table.
 - **Dashboard:** a Databricks AI/BI dashboard, deployed through DABs and parameterised per environment.
 
@@ -43,6 +43,7 @@ All data is synthetic. A seeded generator in `data_generator/` creates the Sales
 | `data_generator/` | Synthetic data generator and the Azure SQL loader |
 | `sql/` | Azure SQL setup scripts and a job-health query over system tables |
 | `tests/` | `unit`, `integration` and `e2e` tiers |
+| `tools/iceberg_check/` | External Iceberg read check: PyIceberg reads `gold.dim_account` through the Unity Catalog Iceberg REST catalog |
 | `sf_dbt/` | dbt Core project over Gold: staging, intermediate, marts, tests, a demo snapshot and SCD2 scenarios (`sf_dbt/scenarios/scd2/`) |
 | `sf_dbt/ci/` | CI profile, one-time grants notebook and README. The schema-cleanup macros live in `sf_dbt/macros/` |
 | `docs/` | Cloud requirements and dashboard snapshots |
@@ -50,7 +51,7 @@ All data is synthetic. A seeded generator in `data_generator/` creates the Sales
 | `governance/` | Mask and row-filter functions, and the grants applied after each pipeline run |
 | `azure-pipelines.yml` | Manual release check with an approval gate (Azure DevOps) |
 | `tests/manual/` | Per-group access check, run by hand |
-| `genie_agent/` | a Databricks Genie agent over the dbt marts, with business-rule instructions and a 10-question SQL-graded benchmark. See `genie_agent/README.md` |
+| `genie_agent/` | A Databricks Genie agent over the dbt marts, with business-rule instructions and a 10-question SQL-graded benchmark. See `genie_agent/README.md` |
 
 ## Environments and promotion gates
 
@@ -85,6 +86,35 @@ Column masks and a row filter protect `silver.contact`, defined as SQL functions
 
 The dashboard shows revenue, cases opened and escalated, and account counts, with usage revenue by month and service, cases by priority and status, and usage by industry. Full PDF: [`Customer 360 Overview.pdf`](docs/dashboards/Customer%20360%20Overview.pdf)
 
+## Gold data model
+
+```mermaid
+flowchart LR
+  DA[dim_account<br/>one row per account<br/>incl. UNKNOWN]
+  DC[dim_contact<br/>one row per contact<br/>non-PII]
+  DD[dim_date<br/>one row per day<br/>date_key yyyyMMdd]
+  FC[fact_case<br/>one row per case]
+  FU[fact_usage<br/>one row per usage event]
+  AM[agg_account_monthly<br/>one row per account and month]
+  AC[agg_contract_vs_usage<br/>one row per account and month with usage]
+  SC[(silver.account_contract)]
+
+  DA -- account_id --> FC
+  DC -- contact_id --> FC
+  DD -- created_date_key --> FC
+  DD -- closed_date_key --> FC
+  DA -- account_id via customer_ref --> FU
+  DD -- date_key --> FU
+  DA -. raw account_id .-> DC
+  SC -. current contract tier .-> DA
+  FC --> AM
+  FU --> AM
+  FU --> AC
+  SC -. current contract .-> AC
+```
+
+*Two facts and three dimensions. `dim_date` plays two roles in `fact_case` (created and closed). Usage resolves its account through `customer_ref`; unmatched facts map to the UNKNOWN account and are flagged. The dotted link from `dim_account` to `dim_contact` means contacts keep their raw account ID and may reference quarantined accounts. Both aggregates roll up to month through `dim_date.month_start`.*
+
 ## dbt layer
 
 A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, intermediate models (including an incremental usage model), two marts with enforced contracts, reusable macros, a demo snapshot and a dashboard exposure. It has 11 models, 60 data tests and 1 unit test, descriptions are persisted to Unity Catalog, and it runs as its own least-privilege service principal that can read Gold and write only to its own schema (Gold write denial tested). It has one documented warning (see Trade-offs and known gaps). See [sf_dbt/README.md](sf_dbt/README.md).
@@ -98,6 +128,8 @@ A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, i
 - **ADF for extraction, Databricks for transformation.** Three different source types is the reason ADF is here. A single source would go straight into Databricks.
 - **No secrets in git.** Salesforce is reached through an External Client App using the client credentials flow, and the client secret lives in Key Vault. Azure SQL is reached with Entra tokens and a managed identity user, with no passwords.
 - **Current contract, one row per account.** Silver contracts are SCD Type 1 keyed on contract, and Gold selects each account's current contract with `ROW_NUMBER`. A separate Gold table holds committed-versus-actual usage, so the validated headline numbers stay stable.
+- **Iceberg compatibility (UniForm).** `gold.dim_account` publishes Iceberg metadata over the same Parquet files, so Iceberg clients can read it without a copy. Pipeline materialized views need external metadata enabled (`pipelines.externalMetadata.enabled`, Public Preview) along with IcebergCompatV3, column mapping and row tracking. Enabling it on the existing table needed a drop and rebuild in each environment, and a one-time `REPAIR TABLE … SYNC METADATA` to generate the first metadata; later refreshes update it automatically.
+- **Verified from outside Databricks.** PyIceberg 0.12 reads `gold.dim_account` (301 rows) through the Unity Catalog Iceberg REST catalog with vended credentials. The reading principal needs `EXTERNAL USE SCHEMA` on the schema, and the script (`tools/iceberg_check/`) reads the host and token from environment variables and stores no credentials.
 
 ## Engineering notes
 
@@ -116,6 +148,7 @@ A dbt Core project (`sf_dbt/`) consumes the Gold layer and adds staging views, i
 **Known gaps**
 - The Network Security Perimeter is in learning mode, and the Key Vault, the dbt service principal's grants and its schemas were created by hand, not in Terraform.
 - Contracts are SCD Type 1 in the pipeline. SCD Type 2 is shown only on demo data (four manual scenarios, not in CI), and incremental loads of changed contracts are untested.
+- `agg_contract_vs_usage` compares every usage month with the account's current contract, not the contract in force that month. A point-in-time comparison needs contract history (SCD Type 2) and a join on `month_start` between `contract_start` and `contract_end`.
 - Revenue band is `Unknown` for every account because the generator sets no annual revenue.
 - 13 Developer Edition sample accounts fail the `customer_ref` rule and sit in quarantine. 20 contacts reference 12 of them, so `dim_contact` keeps their raw account ID while the fact tables map them to UNKNOWN. `sf_dbt` flags and maps them (its relationships test warns on the 20 orphan contacts), and the pipeline fix is planned.
 - 26 cases also map to UNKNOWN, probably from the same sample records, not yet confirmed.
