@@ -2,9 +2,7 @@ name: Unit Tests (dev)
 
 on:
   push:
-    branches: [develop]
-  pull_request:
-    branches: [staging]    
+    branches: [develop]    
 
 permissions:
   contents: read
